@@ -1,3 +1,6 @@
+---
+title: Linux的三个权限
+---
 Linux还有三个比较特殊的权限，分别是：setuid，setgid，stick bit （粘滞位）
 
 1. setuid 和setgid：
