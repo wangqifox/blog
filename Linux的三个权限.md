@@ -1,15 +1,16 @@
 ---
 title: Linux的三个权限
 ---
+
 Linux还有三个比较特殊的权限，分别是：setuid，setgid，stick bit （粘滞位）
 
-1. setuid 和setgid：
+## 1. setuid 和setgid：
 
 	以/etc/passwd和/usr/bin/passwd为例：
 	
 	/etc/passwd的权限为 -rw-r--r--。也就是说：该文件的所有者拥有读写的权限，而用户组成员和其它成员只有查看的权限。我们知道，在系统中我们要修改一个用户的密码，root用户和普通用户均可以用“/usr/bin/passwd 用户名” 这个命令来修改这个/etc/passwd这个文件，root用户本身拥有对/etc/passwd的写权限，可以理解;那普通用户没有写权限，那他怎么也能修改呢？这里就用到了setuid，setuid的作用是让执行该命令的用户以该命令拥有者的权限去执行，就是普通用户执行passwd时会拥有root的权限，这样就可以修改/etc/passwd这个文件了。它的标志为：s，会出现在x的地方，例：-rwsr-xr-x  。而setgid的意思和它是一样的，即让执行文件的用户以该文件所属组的权限去执行。
 	
-2. stick bit(粘滞位)
+## 2. stick bit(粘滞位)
 
 	以/tmp为例：
 	
@@ -17,7 +18,7 @@ Linux还有三个比较特殊的权限，分别是：setuid，setgid，stick bit
 	
 	用户B将该文件删除了，这种情况我们是不能允许的。为了达到该目的，就出现了stick  bit(粘滞位)的概念。它是针对目录来说的，如果该目录设置了stick  bit(粘滞位)，则该目录下的文件除了该文件的创建者和root用户可以删除和修改/tmp目录下的stuff，别的用户均不能动别人的，这就是粘滞位的作用。
 
-3. 如何给文件设置特殊权限
+## 3. 如何给文件设置特殊权限
 
 		chmod u+s xxx # 设置setuid权限
 	
