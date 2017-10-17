@@ -77,6 +77,90 @@ DispatcherServlet的任务就是将请求发送给Spring MVC控制器(controller
 
 既然DisPatcherServlet已经知道由哪个视图渲染结果，那请求的任务基本上也就完成了。它的最后一站是视图的实现(可能是JSP)，在这里它交付模型数据。请求的任务就完成了。视图将使用模型数据渲染输出，这个输出会通过响应对象传递给客户端。
 
+### 5.1.2
+
+在Servlet 3.0环境中，容器会在类路径中查找实现javax.servlet.ServletContainerInitializer接口的类，如果能发现的话，就会用它来配置Servlet容器。
+
+Spring提供了这个接口的实现，名为SpringServletContainerInitializer，这个类反过来又会查找实现WebApplicationInitializer的类并将配置的任务交给它们来完成。Spring 3.2引入了一个便利的WebApplicationInitializer基础实现，也就是AbstractAnnotationConfigDispatcherServletInitializer。因为我们扩展了AbstractAnnotationConfigDispatcherServletInitializer(同时也就是实现了WebApplicationInitializer)，因此当部署到Servlet 3.0容器中的时候，容器会自动发现它，并用它来配置Servlet上下文。
+
+DispatcherServlet加载包含Web组件的bean，如控制器、视图解析器以及处理器映射，而ContextLoaderListener要加载应用中的其他bean。这些bean通常是驱动应用后端的中间层和数据层组件。
+
+实际上，AbstractAnnotationConfigDispatcherServletInitializer会同时创建DispatcherServlet和ContextLoaderListener。getServletConfigClasses()方法返回的带有@Configuration注解的类将会用来定义DispatcherServlet应用上下文中的bean。getRootConfigClasses()方法返回的带有@Configuration注解的类将会用来配置ContextLoaderListener创建的应用上下文中的bean。
+
+### 5.1.3
+
+Java校验API所提供的校验注解
+
+|注解|描述|
+|---|----|
+|@AssertFalse|所注解的元素必须是Boolean类型，并且值为false|
+|@AssertTrue|所注解的元素必须是Boolean类型，并且值为true|
+|@DecimalMax|所注解的元素必须是数字，并且它的值要小于或等于给定的BigDecimalString值|
+|@DecimalMin|所注解的元素必须是数字，并且它的值要大于或等于给定的BigDecimalString值|
+|@Digits|所注解的元素必须是数字，并且它的值必须有指定的位数|
+|@Future|所注解的元素的值必须是一个将来的日期|
+|@Max|所注解的元素必须是数字，并且它的值要小于或等于给定的值|
+|@Min|所注解的元素必须是数字，并且它的值要大于或等于给定的值|
+|@NotNull|所注解的元素的值必须不能为null|
+|@Null|所注解的元素的值必须为null|
+|@Past|所注解的元素的值必须是一个已过去的日期|
+|@Pattern|所注解的元素的值必须匹配给定的正则表达式|
+|@Size|所注解的元素的值必须是String、集合或数组，并且它的长度要符合给定的范围|
+
+### 7.1.1
+
+AbstractAnnotationConfigDispatcherServletInitializer所完成的事情其实比看上去要多。在SpittrWebAppInitializer中我们所编写的三个方法仅仅是必须要重载的abstract的方法。但实际上还有更多的方法可以进行重载，从而实现额外的配置。
+
+此类的方法之一就是customizeRegistration()。在AbstractAnnotationConfigDispatcherServletInitializer将DispatcherServlet注册到Servlet容器中之后，就会调用customizeRegistration()，并将Servlet注册后得到的Registration.Dynamic传递进来。通过重载customizeRegistration()方法，我们可以对DispatcherServlet进行额外的配置。
+
+## 7.3
+
+Spring提供了多种方式将异常转换为响应：
+
+- 特定的Spring异常将会自动映射为指定的HTTP状态码
+- 异常上可以添加@ResponseStatus注解，从而将其映射为某一个HTTP状态码
+- 在方法上可以添加@ExceptionHandler注解，使其用来处理异常
+
+## 7.4
+
+控制器通知(controller advice)是任意带有@ControllerAdvice注解的类，这个类会包含一个或多个如下类型的方法：
+
+- @ExceptionHandler注解标注的方法
+- @InitBinder注解标注的方法
+- @ModelAttribute注解标注的方法
+
+在带有@ControllerAdvice注解的类中，以上所述的这些方法会运用到整个应用程序所有控制器中带有@RequestMapping注解的方法上。
+
+@ControllerAdvice最为实用的一个场景就是将所有的@ExceptionHandler方法收集到一个类中，这样所有控制器的异常就能在一个地方进行一致的处理。
+
+## 7.5
+
+当控制器方法返回的String值以"redirect:"开头的话，那么这个String不是用来查找视图的，而是用来指导浏览器进行重定向的路径。
+
+一般来讲，当一个处理器方法完成之后，该方法所指定的模型数据将会复制到请求中，并作为请求中的属性，请求会转发(forward)到视图上进行渲染。因为控制器方法和视图所处理的是同一个请求，所以在转发的过程中，请求属性能够得以保持。
+
+当控制器的结果是重定向的话，原始的请求就结束了，并且会发起一个新的GET请求。原始请求中所带有的模型数据也就随着请求一起消亡了。在新的请求属性中，没有任何的模型数据，这个请求必须要自己计算数据。
+
+对于重定向来说，模型并不能用来传递数据。但是我们也有一些其他方案，能够从发起重定向的方法传递给处理重定向方法中：
+
+- 使用URL模板以路径变量和/或查询参数的形式传递数据
+- 通过flash属性发送数据
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
