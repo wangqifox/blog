@@ -1,7 +1,8 @@
 ---
 title: SnowFlake
 date: 2017-11-22 18:37:44
-type: "java"
+type: 
+    - java
 tags:
     - java
 ---
