@@ -1,3 +1,7 @@
+---
+title: rabbitMQ
+---
+
 # rabbitMQ
 
 Connection是RabbitMQ的socket链接，它封装了socket协议相关部分逻辑。
@@ -91,3 +95,5 @@ RabbitMQ中实现RPC的机制是：
 - 服务器端收到消息并处理
 - 服务器端处理完消息后，将生产一条应答消息到replyTo指定的Queue，同时带上correlationId属性
 - 客户端之前已订阅replyTo指定的Queue，从中收到服务器的应答消息后，根据其中的correlationId属性分析哪条请求被执行了，根据执行结果进行后续业务处理
+
+

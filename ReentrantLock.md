@@ -1,4 +1,6 @@
-## ReentrantLock
+---
+title: ReentrantLock
+---
 
 lock
 	acquire(1)
@@ -75,3 +77,5 @@ tryAcquire
 tryAcquireShared
 tryRelease
 tryReleaseShared
+
+
