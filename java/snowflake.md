@@ -1,5 +1,6 @@
 ---
 title: SnowFlake
+type: "java"
 ---
 
 # SnowFlake
