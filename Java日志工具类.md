@@ -10,6 +10,8 @@ title: Java日志工具类
 - 接口类，包括Commons-logging、SLF4j
 - 实现类，Log4j、log4j2、logback、jdk logging
 
+<!--more-->
+
 ## 日志接口类工具
 
 Java应用系统中的日志门面，即它们提供了一套通用的接口，具体的实现可以由开发者自由选择。一般我们在程序开发的时候，会选择使用commons-logging或者slf4j这些日志门面，而不是直接使用log4j或者logback这些实现。这样做的好处是，我们可以自由选择日志实现。
