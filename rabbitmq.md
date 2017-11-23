@@ -9,7 +9,7 @@ Connection是RabbitMQ的socket链接，它封装了socket协议相关部分逻�
 ConnectionFactory为Connection的制造工厂
 
 Channel是我们与RabbitMQ打交道的最重要的一个接口，我们大部分的业务操作是在Channel这个接口中完成的，包括定义Queue、定义Exchange、绑定Queue与Exchange、发布消息等。
-
+<!--more-->
 ## Queue
 
 Queue是RabbitMQ的内部对象，用于存储消息。

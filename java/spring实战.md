@@ -11,7 +11,7 @@ Spring自带了多种类型的应用上下文：
 - ClassPathXmlApplicationContext：从类路径下的一个或多个XML配置文件中加载上下文定义，把应用上下文的定义文件作为类资源
 - FileSystemXmlApplicationContext：从文件系统下的一个或多个XML配置文件中加载上下文定义
 - XmlWebApplicationContext：从Web应用下的一个或多个XML配置文件中加载上下文定义
-
+<!--more-->
 在bean准备就绪之前，bean工厂执行了若干启动步骤：
 
 1. 实例化

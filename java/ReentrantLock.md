@@ -11,7 +11,7 @@ lockInterruptibly
 unlock
 	release(1)
 		tryRelease
-
+<!--more-->
 ## Semaphore
 
 acquire

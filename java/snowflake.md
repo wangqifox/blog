@@ -16,7 +16,7 @@ tags:
 如果想要生成纯数字的id，则Twitter的SnowFlake是一个非常优秀的id生成方案。
 
 实现也非常简单，8Byte是一个Long，8Byte等于64bit，SnowFlake就是由毫秒级的时间41位 + 机器ID 10位 + 毫秒内序列12位组成。当然也可以根据需要调整机器位数和毫秒内序列位数比例。
-
+<!--more-->
 SnowFlake的优点是：
 
 - 比UUID短，一般9-17位左右
