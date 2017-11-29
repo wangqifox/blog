@@ -197,45 +197,91 @@ HotSpot没有为每条指令都生成OopMap，只是在"特定的位置"记录�
 
 ##### Serial收集器
 
-
+新生代收集器。单线程收集器，使用一个CPU或一条收集线程去完成垃圾收集工作，在它进行垃圾收集时，必须暂停其他所有的工作线程，直到它收集结束。
 
 ##### ParNew收集器
 
+新生代收集器。Serial收集器的多线程版本。除了Serial收集器外，目前只有它能与CMS收集器配合工作。
+
 ##### Parallel Scavenge收集器
+
+新生代收集器。使用复制算法的并行的多线程收集器。
+
+CMS等收集器的关注点是尽可能地缩短垃圾收集时用户线程的停顿时间，而Parallel Scavenge收集器的目标则是达到一个可控制的吞吐量。
+
+停顿时间越短就越适合需要与用户交互的程序，良好的响应速度能提升用户体验，而高吞吐量则可以高效率地利用CPU时间，尽快完成程序的运算任务，主要适合在后台运算而不需要太多交互的任务。
 
 ##### Serial Old收集器
 
+老年代收集器。Serial收集器的老年代版本，它同样是单线程收集器，使用"标记-整理"算法。
+
+主要意义也是在于给Client模式下的虚拟机使用。如果在Server模式下，那么它主要还有两大用途：一种用途是在JDK 1.5以及之前的版本中与Parallel Scavenge收集器搭配使用，另一种用途就是作为CMS收集器的后备预案，在并发收集发生Concurrent Mode Failure时使用。
+
 ##### Parallel Old收集器
+
+老年代收集器。Parallel Scavenge收集器的老年代版本，使用多线程和"标记-整理"算法。
 
 ##### CMS收集器
 
+新生代收集器。CMS(Concurrent Mark Sweep)收集器是一种以获取最短回收停顿时间为目标的收集器。
+
+CMS收集器是基于"标记-清除"算法实现的，整个过程分为4个步骤：
+
+- 初始标记(CMS initial mark)
+- 并发标记(CMS concurrent mark)
+- 重新标记(CMS remark)
+- 并发清除(CMS concurrent sweep)
+
+其中，初始标记、重新标记这两个步骤仍然需要"Stop The World"。初始标记仅仅只是标记一下GC Roots能直接关联到的对象，速度很快，并发标记阶段就是进行GC Roots Tracing的过程，而重新标记阶段则是为了修正并发标记期间因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始标记阶段稍长一些，但远比并发标记的时间短。
+
+由于整个过程中耗时最长的并发标记和并发清除过程收集器线程都可以与用户线程一起工作，所以，从总体上来说，CMS收集器的内存回收过程是与用户线程一起并发执行的。
+
 ##### G1收集器
 
+在G1之前的其他收集器进行收集的范围都是整个新生代或者老年代，而G1不再是这样。使用G1收集器时，Java堆的内存布局就与其他收集器有很大差别，它将整个Java堆划分为多个大小相等的独立区域(Region)，虽然还保留有新生代和老年代的概念，但新生代和老年代不再是物理隔离的了，它们都是一部分Region(不需要连续)的集合。
+
+G1收集器之所以能建立可预测的停顿时间模型，是因为它可以有计划地避免在整个Java堆中进行全区域的垃圾收集。G1跟踪各个Region里面的垃圾堆积的价值大小(回收所获得的空间大小以及回收所需时间的经验值)，在后台维护一个优先列表，每次根据允许的收集时间，优先回收价值最大的Region(这也就是Garbage-First名称的来由)。这种使用Region划分内存空间以及有优先级的区域回收方式，保证了G1收集器在有限的时间内可以获取尽可能高的收集效率。
+
+##### 理解GC日志
+
+```
+33.125 [GC [DefNew: 3324K->152K(3712K), 0.0025925 secs] 3324K->152K(11904K), 0.0031680 secs]
+100.667 [Full GC [Tenured: 0K->210K(10240K), 0.0149142 secs] 4603K->210K(19456K), [Perm: 2999K->2999K(21248K)], 0.0150007 secs] [Times: user=0.01 sys=0.00, real=0.02 secs] 
+```
+
+- 最前面的数字"33.125"和"100.667"代表了GC发生的时间，这个数字的含义是从Java虚拟机启动以来经过的秒数
+- GC日志开头的"[GC"和"[Full GC"说明了这次垃圾收集的停顿类型，而不是用来区分新生代GC还是老年代GC的。如果有"Full"，说明这次GC是发生了Stop-The-World的。
+- "[DefNew"、"[Tenured"、"[Perm"表示GC发生的区域，这里显示的区域名称与使用的GC收集器是密切相关的。例如上面样例所使用的Serial收集器中的新生代名为"Default New Generation"，所以显示的是"[DefNew"。如果是ParNew收集器，新生代名称就会变为"[ParNew"，意为"Parallel New Generation"。如果采用Parallel Scavenge收集器，那它配套的新生代称为"PSYoungGen"，老年代和永久代同理，名称也是由收集器决定的。
+- 后面方括号内部的"3324K->152K(3712K)"含义是"GC前该内存区域已使用容量->GC后该内存区域已使用容量(该内存区域总容量)"。而在方括号之外的"3324K->152K(11904K)"表示"GC前Java堆已使用容量->GC后Java堆已使用容量(Java堆总容量)"。
+- 再往后，"0.0025925 secs"表示该内存区域GC所占用的时间，单位是秒。有的收集器会给出更具体的时间数据，如"[Times: user=0.01, sys=0.00, real=0.02 secs]"，user、sys、real分别代表用户态消耗的CPU时间、内核态消耗的CPU时间、操作从开始到结束所经过的墙钟时间。
+
+##### 垃圾收集器参数总结
+
+|参数|描述|
+|---|----|
+|UseSerialGC|虚拟机运行在Client模式下的默认值，打开此开关后，使用Serial + Serial Old的收集器组合进行内存回收|
+|UseParNewGC|打开此开关后，使用ParNew + Serial Old的收集器组合进行内存回收|
+|UseConcMarkSweepGC|打开此开关后，使用ParNew + CMS + Serial Old的收集器|
+|UseParallelGC|虚拟机运行在Server模式下的默认值，打开此开关后，使用Parallel Scavenge + Serial Old(PS MarkSweep)的收集器组合进行内存回收|
+|UseParallelOldGC|打开此开关后，使用Parallel Scavenge + Parallel Old的收集器组合进行内存回收|
+|SurvivorRatio|新生代中Eden区域与Survivor区域的容量比值，默认为8，代表Eden:Survivor=8:1|
+|PretenureSizeThreshold|直接晋升到老年代的对象大小，设置这个参数后，大于这个参数的对象将直接在老年代分配|
+|MaxTenuringThreshold|晋升到老年代的对象年龄。每个对象在坚持过一次Minor GC之后，年龄就增加1，当超过这个参数值时就进入老年代|
+|UseAdaptiveSizePolicy|动态调整Java堆中各个区域的大小以及进入老年代的年龄|
+|HandlePromotionFailure|是否允许分配担保失败，即老年代的剩余空间不足以应付新生代的整个Eden和Survivor区的所有对象都存货的极端情况|
+|ParallelGCThreads|设置并行GC时进行内存回收的线程数|
+|GCTimeRatio|GC时间占总时间的比率，默认值为99，即允许1%的GC时间。仅在使用Parallel Scavenge收集器时生效|
+|MaxGCPauseMillis|设置GC的最大停顿时间。仅在使用Parallel Scavenge收集器时生效|
+|CMSInitiatingOccupancyFraction|设置CMS收集器在老年代空间被使用多少后触发垃圾收集。默认值为68%，仅在使用CMS收集器时生效|
+|UseCMSCompactAtFullCollection|设置CMS收集器在完成垃圾收集后是否要进行一次内存碎片整理。仅在使用CMS收集器时生效|
+|CMSFullGCsBeforeCompation|设置CMS收集器在进行若干次垃圾收集后再启动一次内存碎片整理。仅在使用CMS收集器时生效|
 
 
+#### 3.6 内存分配与回收策略
 
+##### 对象优先在Eden分配
 
+Minor GC和Full GC
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 新生代GC(Minor GC)：指发生在新生代的垃圾收集动作，因为Java对象大多数都具备朝生夕灭的特性，所以Minor GC非常频繁，一般回收速度也比较快
+- 老年代GC(Major GC/Full GC)：指发生在老年代的GC，出现了Major GC，经常会伴随至少一次的Minor GC(但非绝对的，在Parallel Scavenge收集器的收集策略里就有直接进行Major GC的策略选择过程)。Major GC的速度一般会比Minor GC慢10倍以上。
