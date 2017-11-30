@@ -538,18 +538,18 @@ Class文件格式：
 - 简单名称：没有类型和参数修饰的方法或者字段名称，这个类中的inc()方法和m字段的简单名称分别是"inc"和"m"
 - 描述符：用来描述字段的数据类型、方法的参数列表(包括数量、类型以及顺序)和返回值。根据描述符规则，基本数据类型(byte, char, double, float, int, long, short, boolean)以及代表无返回值的void类型都用一个大写字符来表示，而对象类型则用字符L加对象的全限定名来表示：
 
-	|标识字符|含义|
-	|---|---|
-	|B|基本类型byte|
-	|C|基本类型char|
-	|D|基本类型double|
-	|F|基本类型float|
-	|I|基本类型int|
-	|J|基本类型long|
-	|S|基本类型short|
-	|Z|基本类型boolean|
-	|V|特殊类型void|
-	|L|对象类型，如Ljava/lang/Object|
+|标识字符|含义|
+|---|---|
+|B|基本类型byte|
+|C|基本类型char|
+|D|基本类型double|
+|F|基本类型float|
+|I|基本类型int|
+|J|基本类型long|
+|S|基本类型short|
+|Z|基本类型boolean|
+|V|特殊类型void|
+|L|对象类型，如Ljava/lang/Object|
 	
 对于数组类型，每一维度将使用一个前置的"["字符来描述，如一个定义为"java.lang.String[][]"类型的二维数组，将被记录为："[[Ljava/lang/String;"，一个整型数组"int[]"将被记录为"[I"
 
