@@ -421,3 +421,187 @@ HSDIS是HotSpot虚拟机JIT编译代码的反汇编插件。
 ##### 不恰当数据结构导致内存占用过大
 
 ##### 由Windows虚拟内存导致的长时间停顿
+
+
+### 第6章 类文件结构
+
+#### Class类文件的结构
+
+根据Java虚拟机规范的规定，Class文件格式采用一种类似于C语言结构体的伪结构来存储数据，这种伪结构中只有两种数据类型：无符号数和表。
+
+无符号数属于基本的数据类型，以u1, u2, u4, u8来分别代表1个字节、2个字节、4个字节、8个字节的无符号数，无符号数可以用来描述数组、索引引用、数量值或者安装UTF-8编码构成字符串值。
+
+表是由多个无符号数或者其他表作为数据项构成的复合数据类型，所有表都习惯性地以"_info"结尾。表用于描述有层次关系的复合结构的数据，整个Class文件本质上就是一张表。
+
+Class文件格式：
+
+|类型|名称|数量|
+|----|---|----|
+|u4|`magic`|1|
+|u2|`minor_version`|1|
+|u2|`major_version`|1|
+|u2|`constant_pool_count`|1|
+|cp_info|`constant_pool`|`constant_pool_count-1`|
+|u2|`access_flags` 访问标识|1|
+|u2|`this_class` 类索引|1|
+|u2|`super_class` 父类索引|1|
+|u2|`interfaces_count` 接口计数器|1|
+|u2|`interfaces`|`interfaces_count`|
+|u2|`fields_count`|1|
+|`field_info`|`fields`|`fields_count`|
+|u2|`methods_count`|1|
+|`method_info`|`methods`|`methods_count`|
+|u2|`attributes_count`|1|
+|`attribute_info`|`attributes`|`attributes_count`|
+
+##### 魔数与Class文件的版本
+
+每个Class文件的头4个字节被称为魔数(Magic Number)，它的唯一作用是确定这个文件是否为一个能被虚拟机接受的Class文件。Class文件的魔数值为：0xCAFEBABE
+
+紧接着魔数的4个字节存储的是Class文件的版本号：第5和第6个字节是次版本号(Minor Version)，第7和第8个字节是主版本号(Major Version)
+
+##### 常量池
+
+常量池中常量的数量是不固定的，所以在常量池的入口需要放置一项u2类型的数据，代表常量池容量计数值(`constant_pool_count`)。与Java中语言习惯不一样的是，这个容量计数是从1而不是0开始的。设计者将第0项常量空出来是有特殊考虑的，这样做的目的在于满足后面某些指向常量池的索引值的数据在特定情况下需要表达"不引用任何一个常量池项目"的含义。
+
+常量池中主要存放两大类常量：字面量(Literal)和符号引用(Symbolic References)。字面量比较接近于Java语言层面的常量概念，如文本字符串、声明为final的常量值等。而符号引用包括了下面三类常量：
+
+- 类和接口的全限定名(Fully Qualified Name)
+- 字段的名称和描述符(Descriptor)
+- 方法的名称和描述符
+
+常量池中每一项常量都是一个表，有一个共同的特点，就是表开始的第一位是一个u1类型的标志位(tag)，代表当前这个常量属于哪种常量类型：
+
+|类型|标志|描述|
+|---|----|---|
+|`CONSTANT_Utf8_info`|1|UTF-8编码的字符串|
+|`CONSTANT_Integer_info`|3|整型字面量|
+|`CONSTANT_Float_info`|4|浮点型字面量|
+|`CONSTANT_Long_info`|5|长整型字面量|
+|`CONSTANT_Double_info`|6|双精度浮点型字面量|
+|`CONSTANT_Class_info`|7|类或接口的符号引用|
+|`CONSTANT_String_info`|8|字符串类型字面量|
+|`CONSTANT_Fieldref_info`|9|字段的符号引用|
+|`CONSTANT_Methodref_info`|10|类中方法的符号引用|
+|`CONSTANT_InterfaceMethodref_info`|11|接口中方法的符号引用|
+|`CONSTANT_NameAndType_info`|12|字段或方法的部分符号引用|
+|`CONSTANT_MethodHandle_info`|15|表示方法句柄|
+|`CONSTANT_MethodType_info`|16|标志方法类型|
+|`CONSTANT_InvokeDynamic_info`|18|表示一个动态方法调用点|
+
+##### 访问标志
+
+|标志名称|标志值|含义|
+|-------|----|----|
+|ACC_PUBLIC|0x0001|是否为public类型|
+|ACC_FINAL|0x0010|是否被声明为final，只有类可设置|
+|ACC_SUPER|0x0020|是否允许使用invokespecial字节码指令的新语义，invokespecial指令的语义在JDK 1.0.2发生过改变，为了区别这条指令使用哪种语义，JDK 1.0.2之后编译出来的类的这个标志都必须为真|
+|ACC_INTERFACE|0x0200|标识这是一个接口|
+|ACC_ABSTRACT|0x0400|是否为abstract类型，对于接口或者抽象类来说，此标志值为真，其他类值为假|
+|ACC_SYNTHETIC|0x1000|标识这个类并非由用户代码产生的|
+|ACC_ANNOTATION|0x2000|标识这是一个注解|
+|ACC_ENUM|0x4000|标识这是一个枚举|
+
+##### 类索引、父类索引、接口索引集合
+
+##### 字段表集合
+
+字段表(field_info)用于描述接口或者类中声明的变量。字段(field)包括类级变量以及实例级变量，但不包括在方法内部声明的局部变量。
+
+字段表结构:
+
+|类型|名称|数量|
+|----|---|---|
+|u2|access_flags|1|
+|u2|name_index|1|
+|u2|descriptor_index|1|
+|u2|attibutes_count|1|
+|attribute_info|attributes|attributes_count|
+
+字段修饰符放在access_flags项目中，它与类中的access_flags项目是非常类似的，都是一个u2的数据类型，其中可以设置的标志位和含义：
+
+|标志名称|标志值|含义|
+|-------|-----|---|
+|ACC_PUBLIC|0x0001|字段是否public|
+|ACC_PRIVATE|0x0002|字段是否private|
+|ACC_PROTECTED|0x0004|字段是否protected|
+|ACC_STATIC|0x0008|字段是否static|
+|ACC_FINAL|0x0010|字段是否final|
+|ACC_VOLATILE|0x0040|字段是否volatiel|
+|ACC_TRANSIENT|0x0080|字段是否transient|
+|ACC_SYNTHENTIC|0x1000|字段是否由编译器自动产生|
+|ACC_ENUM|0x4000|字段是否enum|
+
+跟随`access_flags`标志的是两项索引值：`name_index`和`descriptor_index`。它们都是对常量池的引用，分别代表着字段的简单名称以及字段和方法的描述符。
+
+- 全限定名：`org/fenixsoft/clazz/TestClass`是这个类的全限定名，仅仅是把类全名中的"."替换成了"/"而已
+- 简单名称：没有类型和参数修饰的方法或者字段名称，这个类中的inc()方法和m字段的简单名称分别是"inc"和"m"
+- 描述符：用来描述字段的数据类型、方法的参数列表(包括数量、类型以及顺序)和返回值。根据描述符规则，基本数据类型(byte, char, double, float, int, long, short, boolean)以及代表无返回值的void类型都用一个大写字符来表示，而对象类型则用字符L加对象的全限定名来表示：
+
+	|标识字符|含义|
+	|---|---|
+	|B|基本类型byte|
+	|C|基本类型char|
+	|D|基本类型double|
+	|F|基本类型float|
+	|I|基本类型int|
+	|J|基本类型long|
+	|S|基本类型short|
+	|Z|基本类型boolean|
+	|V|特殊类型void|
+	|L|对象类型，如Ljava/lang/Object|
+	
+对于数组类型，每一维度将使用一个前置的"["字符来描述，如一个定义为"java.lang.String[][]"类型的二维数组，将被记录为："[[Ljava/lang/String;"，一个整型数组"int[]"将被记录为"[I"
+
+用描述符来描述方法时，按照先参数列表，后返回值的顺序描述，参数列表按照参数的严格顺序放在一组小括号"()"之内。如方法void inc()的描述符为"()V"，方法java.lang.String.toString()的描述符为"()Ljava/lang/String;"，方法int indexOf(char[] source, int sourceOffset, int sourceCount, char[] target, int targetOffset, int targetCount, int fromIndex)的描述符为"([CII[CIII)I"
+
+descriptor_index之后跟随一个属性表集合用于存储一些额外的信息，字段都可以在属性表中描述零至多项的额外信息。
+
+字段表集合中不会列出从超类或者父接口中继承而来的字段，但有可能列出原本Java代码之中不存在的字段，譬如在内部类中为了保持对外部类的访问性，会自动添加指向外部类实例的字段。另外，在Java语言中字段是无法重载的，两个字段的数据类型、修饰符不管是否相同，都必须使用不一样的名称，但是对于字节码来讲，如果两个字段的描述符不一致，那字段重名就是合法的。
+
+##### 方法表集合
+
+Class文件存储格式中对方法的描述与对字段的描述几乎采用了完全一致的方式，方法表结构：
+
+|类型|名称|数量|
+|----|---|---|
+|u2|access_flags|1|
+|u2|name_index|1|
+|u2|descriptor_index|1|
+|u2|attributes_count|1|
+|attributes_count|attributes|attributes_count|
+
+方法访问标志：
+
+|标志名称|标志值|含义|
+|----|---|---|
+|ACC_PUBLIC|0x0001|方法是否为public|
+|ACC_PRIVATE|0x0002|方法是否为private|
+|ACC_PROTECTED|0x0004|方法是否为protected|
+|ACC_STATIC|0x0008|方法是否为static|
+|ACC_FINAL|0x0010|方法是否为final|
+|ACC_SYNCHRONIZED|0x0020|方法是否为synchronized|
+|ACC_BRIDGE|0x0040|方法是否是由编译器产生的桥接方法|
+|ACC_VARARGS|0x0080|方法是否接受不定参数|
+|ACC_NATIVE|0x0100|方法是否为native|
+|ACC_ABSTRACT|0x0400|方法是否为abstract|
+|ACC_STRICTFP|0x0800|方法是否为strictfp|
+|ACC_SYNTHETIC|0x1000|方法是否是由编译器自动产生的|
+
+与字段表集合相对应的，如果父类方法在子类中没有被重写(Override)，方法表集合中就不会出现来自父类的方法信息。但同样的，有可能会出现由编译器自动添加的方法，最典型的便是类构造器"<clinit>"方法和实例构造器"<init>"方法
+
+在Java语言中，要重载(Overload)一个方法，除了要与原方法具有相同的简单名称之外，还要求必须拥有一个与原方法不同的特征签名，特征签名就是一个方法中各个参数在常量池中的字段符号引用的集合，也就是因为返回值不会包含在特征签名中，因此Java语言里面是无法仅仅依靠返回值的不同来对一个已有方法进行重载的。但是在Class文件格式中，特征签名的范围更大一些，只要描述符不是完全一致的两个方法也可以共存。也就是说，如果两个方法有相同的名称和特征签名，但返回值不同，那么也是可以合法共存于同一个Class文件中的。
+
+##### 属性表集合
+
+1. Code属性
+2. Exceptions属性
+3. LineNumberTable属性
+4. LocalVariableTable属性
+5. SourceFile属性
+6. ConstantValue属性
+7. InnerClasses属性
+8. Deprecated及Synthetic属性
+9. StackMapTable属性
+10. Signature属性
+11. BootstrapMethods属性
