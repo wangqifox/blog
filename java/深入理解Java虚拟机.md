@@ -395,3 +395,29 @@ jstack工具主要选项：
 ##### HSDIS：JIT生成代码反汇编
 
 HSDIS是HotSpot虚拟机JIT编译代码的反汇编插件。
+
+### 第5章 调优案例分析与实战
+
+#### 案例分析
+
+##### 高性能硬件上的程序部署策略
+
+##### 集群间同步导致的内存溢出
+
+##### 堆外内存导致的溢出错误
+
+除了Java堆和永久代之外，我们注意到下面这些区域还会占用较多的内存，这里所有的内存总和受到操作系统进程最大内存的限制
+
+- Direct Memory: 可通过`-XX:MaxDirectMemorySize`调整大小，内存不足时抛出`OutOfMemoryError`或者`OutOfMemoryError: Direct buffer memory`
+- 线程堆栈：可通过`-Xss`调整大小，内存不足时抛出`StackOverflowError`(纵向无法分配，即无法分配新的栈帧)或者`OutOfMemoryError:unable to create new native thread`(横向无法分配，即无法建立新的线程)
+- Socket缓存区：每个Socket连接都Receive和Send两个缓存区，分别占大约37KB和25KB内存，连接多的话内存占用也比较可观。如果无法分配，则可能会抛出`IOException: Too many open files`异常
+- JNI代码：如果代码中使用JNI调用本地库，那本地库使用的内存也不在堆中。
+- 虚拟机和GC：虚拟机、GC的代码执行也要消耗一定的内存
+
+##### 外部命令导致系统缓慢
+
+##### 服务器JVM进程崩溃
+
+##### 不恰当数据结构导致内存占用过大
+
+##### 由Windows虚拟内存导致的长时间停顿
