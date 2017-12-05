@@ -758,33 +758,86 @@ Java虚拟机的解释执行引擎称为"基于栈的执行引擎"，其中所�
 
 ###### 动态分派
 
+动态分派和多态性的另外一个重要体现——重写(Override)有着很密切的关系。
 
+invokevirtual指令的运行时解析过程大致分为以下几个步骤：
 
+1. 找到操作数栈顶的第一个元素所指向的对象的实际类型，记作C
+2. 如果在类型C中找到与常量中的描述符合简单名称都相符的方法，则进行访问权限校验，如果通过则返回这个方法的直接引用，查找过程结束；如果不通过，则返回java.lang.IllegalAccessError异常
+3. 否则，按照继承关系从下往上依次对C的各个父类进行第2步的搜索和验证过程
+4. 如果始终没有找到合适的方法，则抛出java.lang.AbstractMethodError异常
 
+由于invokevirtual指令执行的第一步就是在运行期确定接受者的实际类型，所以两次调用中的invokevirtual指令把常量池中的符号引用解析到了不同的直接引用上，这个过程就是Java语言中方法重写的本质。我们把这种在运行期根据实际类型确定方法执行版本的分派过程称为动态分派。
 
+###### 单分派与多分派
 
+方法的接收者与方法的参数统称为方法的宗量，这个定义最早应该来源于《Java与模式》一书。根据分派基于多少种宗量，可以将分派划分为单分派和多分派两种。单分派是根据一个宗量对目标方法进行选择，多分派则是根据多于一个宗量对目标方法进行选择。
 
+今天的Java语言是一门静态多分派、动态单分派的语言。
 
+###### 虚拟机动态分派的实现
 
+最常用的"稳定优化"手段就是为类在方法区中建立一个虚方法表(Virtial Method Table，也称为vtable，与此对应的，在invokeinterface执行时也会用到接口方法表——Interface Method Table，简称itable)，使用虚方法表索引来代替元数据查找以提高性能。
 
+虚方法表中存放着各个方法的实际入口地址。如果某个方法在子类中没有被重写，那子类的虚方法表里面的地址入口和父类相同方法的地址入口是一致的，都指向父类的实现入口。如果子类中重写了这个方法，子类方法表中的地址将会替换为指向子类实现版本的入口地址。
 
+为了程序实现上的方便，具有相同签名的方法，在父类、子类的虚方法表中都应当具有一样的索引序号，这样当类型变换时，仅需要变更查找的方法表，就可以从不同的虚方法表中按索引转换所需的入口地址。
 
+方法表一般在类加载的连接阶段进行初始化，准备了类的变量初始值后，虚拟机会把该类的方法表也初始化完毕。
 
+##### 动态类型语言支持
 
+```
+public class MethodHandleTest {
+    static class ClassA {
+        public void println(String s) {
+            System.out.println("in classA");
+            System.out.println(s);
+        }
+    }
 
+    public static void main(String[] args) throws Throwable {
+        Object obj = System.currentTimeMillis() % 2 == 0 ? System.out : new ClassA();
+        getPrintlnMH(obj).invokeExact("icyfenix");
+    }
 
+    private static MethodHandle getPrintlnMH(Object receiver) throws NoSuchMethodException, IllegalAccessException {
+        /**
+         * MethodType: 代表"方法类型"，包含了方法的返回值（methodType()的第一个参数）和具体参数（methodType()第二个及以后的参数）
+         */
+        MethodType mt = MethodType.methodType(void.class, String.class);
+        /**
+         * lookup()方法来自于MethodHandles.lookup，这句的作用是在指定类中查找符合给定的方法名称、方法类型，并且符合调用权限的方法句柄
+         * 因为这里调用的是一个虚方法，按照Java语言的规则，方法第一个参数是隐式的，代表该方法的接收者，也即是this指向的对象，这个参数以前是放在参数列表中进行传递的，而现在提供了bindTo()方法来完成这件事情
+         */
+        return MethodHandles.lookup().findVirtual(receiver.getClass(), "println", mt).bindTo(receiver);
+    }
+}
+```
 
+实际上，方法getPrintlnMH()中模拟了invokevirtual指令的执行过程，只不过它的分派逻辑并非固化在Class文件的字节码上，而是通过一个具体的方法来实现。而这个方法本省的返回值(MethodHandle对象)，可以视为对最终调用方法的一个"引用"。
 
+仅站在Java语言的角度来看，MethodHandle的使用方法和效果与Reflection有众多相似之处，不过，它们还是有以下这些区别：
 
+- 从本质上讲，Reflection和MethodHandle机制都是在模拟方法调用，但Reflection是在模拟Java代码层次的方法调用，而MethodHandle是在模拟字节码层次的方法调用。在MethodHandles.lookup中的3个方法——findStatic()、findVirtual()、findSpecial()正是为了对应于invokestatic、invokevirtual & invokeinterface、invokespecial这几条字节码指令的执行权限校验行为
+- Reflection中的java.lang.reflect.Method对象远比MethodHandle机制中的java.lang.invoke.MethodHandle对象所包含的信息多。前者是方法在Java一端的全面映像，包含了方法的签名、描述符以及方法属性表中各种属性的Java端表示方式，还包含执行权限等的运行期信息。而后者仅仅包含与执行该方法相关的信息。
+- 由于MethodHandle是对字节码的方法指令调用的模拟，所以理论上虚拟机在这方面做的各种优化(如方法内联)，在MethodHandle上也应当可以采用类似思路去支持(但目前实现还不完善)。而通过反射去调用方法则不行。
 
+###### invokedynamic指令
 
+在某种程度上，invokedynamic指令与MethodHandle机制的作用是一样的，都是为了解决原有4条"invoke*"指令方法分派规则固化在虚拟机之中的问题，把如何查找目标方法的决定权从虚拟机转嫁到具体用户代码之中，让用户（包含其他语言的设计者）有更高的自由度。而且，它们两者的思路也是可类比的，可以把它们想象成为了达成同一个目的，一个采用上层Java代码和API来实现，另一个用字节码和Class中其他属性、常量来完成。
 
+每一处含有invokedynamic指令的位置都称作"动态调用点"(Dynamic Call Site)，这条指令的第一个参数不再是代表方法符号引用的CONSTANT_Methodref_info常量，而是变为JDK 1.7新加入的CONSTANT_InvokeDynamic_info常量，从这个新常量中可以得到3项信息：
 
+- 引导方法（Bootstrap Method，此方法存放在新增的BootstrapMethods属性中）。引导方法是有固定的参数，并且返回值是java.lang.invoke.CallSite对象，这个代表真正要执行的目标方法调用。
+- 方法类型
+- 方法名称
 
+#### 基于栈的字节码解释执行引擎
 
+##### 解释执行
 
+##### 基于栈的指令集与基于寄存器的指令集
 
-
-
-
+##### 基于栈的解释器执行过程
 
