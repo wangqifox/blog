@@ -1,9 +1,13 @@
+---
+title: MySQL加锁
+---
+
 ## MySQL加锁处理分析
 
 MySQL InnoDB存储引擎，实现的是基于多版本的并发控制协议——MVCC(Multi-Version Concurrency Control)（注：与MVCC相对的，是基于锁的并发控制，Lock-Based Concurrency Control）。MVCC最大的好处：读不加锁，读写不冲突。在读多写少的OLTP应用中，读写不冲突是非常重要的，极大的增加了系统的并发性能。
 
 在MVCC并发控制中，读操作可以分为两类：快照读(snapshot read)与当前读(current read)。快照读，读取的是记录的可见版本(有可能是历史版本)，不用加锁。当前读，读取的是记录的最新版本，并且，当前读返回的记录，都会加上锁，保证其他事务不会再并发修改这条记录。
-
+<!--more-->
 以MySQL InnoDB为例：
 
 - 快照读：简单的select操作，属于快照读，不加锁
