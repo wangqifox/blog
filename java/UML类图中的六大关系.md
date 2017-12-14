@@ -16,7 +16,7 @@ title: UML类图中的六大关系：关联、聚合、组合、依赖、继承�
 - (依赖)Dependency：A类使用了B类
 - (继承)Inheritance：B类是一个A类（或者B类扩展A类）
 - (实现)Realization：B类实现了接口A
-
+<!--more-->
 ## 关联(association)
 
 关联描述两个类之间行为的一般二元关系。例如，一个学生选修一门特定的课程是学生类Student和课程类Course之间的一个关联，而一个教师教授一门课程是师资类Faculty和课程类Course之间的一个关联。Java代码中，关联可以用属性和方法来实现。
