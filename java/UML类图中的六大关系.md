@@ -16,12 +16,14 @@ title: UML类图中的六大关系：关联、聚合、组合、依赖、继承�
 - (依赖)Dependency：A类使用了B类
 - (继承)Inheritance：B类是一个A类（或者B类扩展A类）
 - (实现)Realization：B类实现了接口A
+
 <!--more-->
+
 ## 关联(association)
 
 关联描述两个类之间行为的一般二元关系。例如，一个学生选修一门特定的课程是学生类Student和课程类Course之间的一个关联，而一个教师教授一门课程是师资类Faculty和课程类Course之间的一个关联。Java代码中，关联可以用属性和方法来实现。
 
-```
+```java
 public class Student {
 	private Course[] courses;
 	public void addCourse(Course s) {
@@ -55,7 +57,7 @@ public class Faculty {
 
 聚合是一种特殊的关联(Association)形式，表示两个对象之间的所属(has-a)关系。所有者对象称为聚合对象，它的类称为聚合类；从属对象称为被聚合对象，它的类称为被聚合类。例如，一个公司有很多员工就是公司类Company和员工类Employee之间的一种聚合关系。被聚合对象和聚合对象有着各自的生命周期，即如果公司倒闭并不影响员工的存在。
 
-```
+```java
 public class Company {
 	private List<Employee> employee;
 }
@@ -71,7 +73,7 @@ public class Employee {
 
 1. 通过成员变量初始化
 
-	```
+	```java
 	public class Car {
 		private final Engine engine = new Engine();
 	}
@@ -83,7 +85,7 @@ public class Employee {
 
 2. 通过构造函数初始化
 
-	```
+	```java
 	public class Car {
 		private final Engine engine;
 		
@@ -99,7 +101,7 @@ public class Employee {
 
 3. 通过延迟初始化
 
-	```
+	```java
 	public class Car {
 		private final Engine engine;
 		public Engine getEngine() {
@@ -119,7 +121,7 @@ public class Employee {
 
 依赖(Dependency)描述的是一个类的引用用作另一个类的方法的参数。例如，可以使用Calendar类中的setTime(Date date)方法设置日历，所以Calendar和Date之间的关系可以用依赖描述。
 
-```
+```java
 public abstract class Calendar implements Serializable, Cloneable, Comparable<Calendar> {
 	public final void setTime(Date date) {
 		setTimeInMillis(date.getTime());
@@ -133,7 +135,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
 继承(Inheritance)模拟两个类之间的is-a关系。强是(strong is-a)关系描述两个类之间的直接继承关系。弱是(weak is-a)关系描述一个类具有某个属性。强是关系可以用类的继承表示。例如，Spring的ApplicationEvent是一个EventObject，ApplicationEvent和EventObject间就是一种强是关系，可以用继承描述。
 
-```
+```java
 public abstract class ApplicationEvent extends EventObject {
 	...
 }
@@ -143,7 +145,7 @@ public abstract class ApplicationEvent extends EventObject {
 
 实现(Realization)描述的是一个类实现了接口（可以是多个）。上面描述的弱是(weak is-a)关系就可以用接口表示。例如字符串是可以被序列化的，这就可以用实现来描述
 
-```
+```java
 public final class String implements java.io.Serializable, Comparable<String>, CharSequence {
 	...
 }
