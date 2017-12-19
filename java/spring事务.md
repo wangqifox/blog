@@ -22,6 +22,151 @@ title: spring事务
 
 <!--more-->
 
+#### Propagation.REQUIRED
+
+如果当前已经存在事务，那么加入该事务，如果不存在事务，创建一个事务，这是默认的传播属性值
+
+```java
+@Transactional
+public void service() {
+	serviceA();
+	serviceB();
+}
+
+@Transactional
+serviceA();
+@Transactional
+serviceB();
+```
+
+serviceA和serviceB都声明了事务，默认情况下，propagation=Propagation.REQUIRED，整个service调用过程中，只存在一个共享的事务，当有任何异常发生的时候，所有操作回滚。
+
+#### Propagation.NOT_SUPPORTED
+
+如果当前存在事务，挂起当前事务，然后新的方法在没有事务的环境中执行，没有spring事务的环境下，sql的提交完全依赖于defaultAutoCommit属性值。
+
+```java
+@Transactional
+public void service() {
+	serviceB();
+	serviceA();
+}
+
+serviceB() {
+	do sql
+}
+
+@Transactional(propagation=Propagation.NOT_SUPPORTED)
+serviceA() {
+	do sql 1
+	1/0
+	do sql 2
+}
+```
+
+#### Propagation.REQUIRES_NEW
+
+如果当前存在事务，先把当前事务相关内容封装到一个实体，然后重新创建一个新事务，接受这个实体为参数，用于事务的恢复。更直白的说法就是暂停当前事务(当前无事务则不需要)，创建一个新事务。针对这中情况，两个事务没有依赖关系，可以实现新事务回滚，但外部事务继续执行。
+
+```java
+@Transactional
+public void service() {
+	serviceB();
+	try {
+		serviceA();
+	} catch(Exception e) {
+	}
+}
+
+serviceB() {
+	do sql
+}
+
+@Transactional(propagation=Propagation.REQUIRES_NEW)
+serviceA() {
+	do sql 1
+	1/0
+	do sql 2
+}
+```
+
+当调用service接口时，由于serviceA使用的是REQUIRES_NEW，它会创建一个新的事务，但由于serviceA抛出了运行时异常，导致serviceA整个被回滚了，而在service方法中，捕获了异常，所以serviceB是正常提交的。注意，service中的try...catch代码是必须的，否则service也会抛出异常，导致serviceB也被回滚。
+
+#### Propagation.MANDATORY
+
+当前必须存在一个事务，否则抛出异常
+
+```java
+public void service() {
+	serviceB();
+	serviceA();
+}
+
+serviceB() {
+	do sql
+}
+
+@Transactional(propagation=Propagation.MANDATORY)
+serviceA() {
+	do sql
+}
+```
+
+这种情况执行service会抛出异常，如果defaultAutoCommit=true，则serviceB是不会回滚的，defaultAutoCommit=false，则serviceB执行无效。
+
+#### Propagation.NEVER
+
+如果当前存在事务，则抛出异常，否则在无事务环境上执行代码
+
+```java
+public void service() {
+	serviceB();
+	serviceA();
+}
+serviceB() {
+	do sql
+}
+@Transactional(propagation=Propagation.NEVER)
+serviceA() {
+	do sql 1
+	1/0
+	do sql 2
+}
+```
+
+上面的示例调用service后，若defaultAutoCommit=true，则serviceB方法及serviceA中的sql1都会生效
+
+#### Propagation.SUPPORTS
+
+如果当前已经存在事务，那么加入该事务，否则创建一个所谓的空事务(可以认为无事务执行)
+
+```java
+public void service() {
+	serviceA();
+	throw new RunTimeException();
+}
+
+@Transactional(propagation=Propagation.SUPPORTS)
+serviceA();
+```
+
+serviceA执行时当前没有事务，所以service中抛出的异常不会导致serviceA回滚
+
+```java
+public void service() {
+	serviceA();
+}
+
+@Transactional(propagation=Propagation.SUPPORTS)
+serviceA() {
+	do sql 1
+	1/0;
+	do sql 2;
+}
+```
+
+由于serviceA运行时没有事务，这时候，如果底层数据源defaultAutoCommit=true，那么sql1是生效的，如果defaultAutoCommit=false，那么sql1无效，如果service有@Transactional标签，serviceA共用service的事务(不再依赖defaultAutoCommit)，此时，serviceA全部被回滚
+
 ### 事务超时设置
 
 @Transactional(timeout=30)	//默认是30秒
