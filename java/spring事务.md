@@ -1,5 +1,5 @@
 ---
-title: spring事务
+title: Spring事务
 ---
 
 ## Spring @Transactionl的传播行为和隔离级别
@@ -207,5 +207,7 @@ serviceA() {
 
 
 > http://tech.lede.com/2017/02/06/rd/server/SpringTransactional/
+> 
+> http://blog.csdn.net/yanyan19880509/article/details/53041564
 
 
