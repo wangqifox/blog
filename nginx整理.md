@@ -16,6 +16,8 @@ title: nginx整理
 - `$server_protocol`：请求使用的协议，通常是HTTP/1.0或HTTP/1.1
 - `$uri`：请求中的当前URI(不带请求参数，参数位于`$args`)，不同于浏览器传递的`$request_uri`的值，它可以通过内部重定向，或者使用index指令进行修改。不包含协议和主机名，例如`/foo/bar.html`
 
+<!--more-->
+
 ## `proxy_set_header`设置Host为`$proxy_host`,`$host`,`$local_host`的区别
 
 `proxy_set_header`允许重新定义或者添加发往后端服务器的请求头。当且仅当当前配置级别中没有定义`proxy_set_header`指令时，会从上面的级别继承配置。默认情况下，只有两个请求头会被重新定义：
