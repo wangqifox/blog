@@ -167,6 +167,158 @@ serviceA() {
 
 由于serviceA运行时没有事务，这时候，如果底层数据源defaultAutoCommit=true，那么sql1是生效的，如果defaultAutoCommit=false，那么sql1无效，如果service有@Transactional标签，serviceA共用service的事务(不再依赖defaultAutoCommit)，此时，serviceA全部被回滚
 
+#### Propagation.NESTED
+
+如果当前存在事务，则使用SavePoint技术把当前事务状态进行保存，然后底层共用一个连接，当NESTED内部出错的时候，自行回滚到SavePoint这个状态，只要外部捕获到了异常，就可以继续进行外部的事务提交，而不会受到内嵌业务的干扰，但是，如果外部事务抛出了异常，整个大事务都会回滚。
+
+注意：Spring配置事务管理器要主动指定nestedTransactionAllowed=true，如下所示：
+
+```java
+<bean id="dataTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataDataSource" />
+    <property name="nestedTransactionAllowed" value="true" />
+</bean>
+```
+
+看一个小例子，代码如下：
+
+```java
+@Transactional
+public void service() {
+	serviceA();
+	try {
+		serviceB();
+	} catch(Exception e) {
+	}
+}
+
+serviceA() {
+	do sql
+}
+
+@Transactional(propagation = Propagation.NESTED)
+serviceB() {
+	do sql1
+	1/0;
+	do sql2
+}
+```
+
+serviceB是一个内嵌的业务，内部抛出了运行时异常，所以serviceB整个被回滚了，由于service捕获了异常，所以serviceA是可以正常提交的。
+
+再来看一个例子，代码如下：
+
+```java
+@Transactional
+public void service() {
+	serviceA();
+	serviceB();
+	1/0;
+}
+
+@Transactional(propagation=Propagation.NESTED)
+serviceA() {
+	do sql
+}
+
+serviceB() {
+	do sql
+}
+```
+
+由于service抛出了异常，所以会导致整个service方法被回滚。（这就是跟Propagation.REQUIRES_NEW不一样的地方了，NESTED方式下的内嵌业务会受到外部事务的异常而回滚）
+
+### 实现浅析
+
+本小节列举Propagation.REQUIRES_NEW和Propagation.NESTED分别进行简要说明
+
+#### Propagation.REQUIRES_NEW实现原理
+
+如下的代码调用：
+
+```java
+@Transactional
+public void service() {
+	serviceB();
+	try {
+		serviceA();
+	} catch(Exception e) {
+	}
+}
+@Transactional(propagation=Propagation.REQUIRES_NEW)
+serviceA() {
+	do sql 1
+	1/0;
+	do sql 2
+}
+serviceB() {
+	do sql
+}
+```
+
+执行原理：
+
+```
+before service，执行a和b
+	执行serviceB
+	before serviceA，执行c和d
+		执行serviceA
+		抛出异常
+	after serviceA，执行e
+after service，执行f
+```
+
+1. 创建事务状态对象，获取一个新的连接，重置连接的autoCommit, fetchSize, timeout等属性
+2. 把连接绑定到ThreadLocal变量
+3. 挂起当前事务，把当前事务状态对象，连接等信息封装成——SuspendedResources对象，可用于恢复
+4. 创建新的事务状态对象，重新获取新的连接，重置新连接的autoCommit, fetchSize, timeout等属性，同时，保存SuspendedResources对象，用于事务的恢复，把新的连接绑定到ThreadLocal变量(覆盖操作)
+5. 捕获到异常，回滚ThreadLocal中的连接，恢复连接参数，关闭连接，恢复SuspendedResources
+6. 提交ThreadLocal变量中的连接(导致serviceB被提交)，还原连接参数，关闭连接，连接归还数据源，所以程序执行的结果就是serviceA被回滚了，serviceB成功提交了。
+
+#### Propagation.NESTED实现原理
+
+如下的代码调用：
+
+```java
+@Transactional
+public void service() {
+	serviceA();
+	try {
+		serviceB();
+	} catch(Exception e) {
+	}
+}
+serviceA() {
+	do sql
+}
+@Transactional(propagation=Propagation.NESTED)
+serviceB() {
+	do sql1
+	1/0;
+	do sql2
+}
+```
+
+执行原理：
+
+```
+before service，执行a和b
+	执行serviceA
+	before serviceB，执行c
+		执行serviceB
+		抛出异常
+	after serviceB，执行d
+after service，执行e
+```
+
+1. 创建事务状态对象，获取一个新的连接，重置连接的autoCommit,fetchSize,timeout等属性
+2. 把连接绑定到ThreadLocal变量
+3. 标记使用当前事务状态对象，获取ThreadLocal连接对象，保存当前连接的SavePoint，用于异常恢复，此时的SavePoint就是执行完serviceA后的状态
+4. 捕获到异常，使用c中的SavePoint进行事务回滚，也就是把状态回滚到执行serviceA后的状态，serviceB方法所有执行不生效
+5. 获取ThreadLocal中的连接对象，提交事务，恢复连接属性，关闭连接
+
+**Spring在底层数据源的基础上，利用ThreadLocal, SavePoint等技术点实现了多种事务传播属性，便于实现各种复杂的业务。只有理解了传播属性的原理才能更好地驾驭Spring事务。Spring回滚事务依赖于对异常的捕获，默认情况下，只有抛出RuntimeException和Error才会回滚事务，当然可以进行配置。**
+
 ### 事务超时设置
 
 @Transactional(timeout=30)	//默认是30秒
