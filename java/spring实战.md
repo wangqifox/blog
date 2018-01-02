@@ -12,6 +12,9 @@ Spring自带了多种类型的应用上下文：
 - FileSystemXmlApplicationContext：从文件系统下的一个或多个XML配置文件中加载上下文定义
 - XmlWebApplicationContext：从Web应用下的一个或多个XML配置文件中加载上下文定义
 <!--more-->
+
+使用FileSystemXmlApplicationContext和使用ClassPathXmlApplicationContext的区别在于：FileSystemXmlApplication在指定的文件系统路径下查找xml文件；而ClassPathXmlApplicationContext是在所有路径(包含jar文件)下查找xml文件
+
 在bean准备就绪之前，bean工厂执行了若干启动步骤：
 
 1. 实例化
@@ -20,7 +23,7 @@ Spring自带了多种类型的应用上下文：
 4. 调用BeanFactoryAware的setBeanFactory()方法：如果bean实现了BeanFactoryAware接口，Spring将调用setBeanFactory()方法，将BeanFactory容器示例传入
 5. 调用ApplicationContextAware的setApplicationContext()方法：如果bean实现了ApplicationContextAware接口，Spring将调用setApplicationContext()方法，将bean所在的应用上下文的引用传入进来
 6. 调用BeanPostProcessor的预初始化方法：如果bean实现了BeanPostProcessor接口，Spring将调用他们的postProcessBeforeInitialization()方法
-7. 调动InitializingBean的afterPropertiesSet()方法：如果bean实现了InitializingBean接口，Spring将调用他们的afterPropertiesSet()方法。类似地，如果bean使用init-method声明了初始化方法，该方法也会被调用
+7. 调用InitializingBean的afterPropertiesSet()方法：如果bean实现了InitializingBean接口，Spring将调用他们的afterPropertiesSet()方法。类似地，如果bean使用init-method声明了初始化方法，该方法也会被调用
 8. 调用自定义的初始化方法
 9. 调用BeanPostProcessor的初始化方法：如果bean实现了BeanPostProcessor接口，Spring将调用他们的postProcessAfterInitialization()方法
 10. bean可以使用了:此时，bean已经准备就绪，可以被应用程序使用了，他们将一直驻留在应用上下文中，直到该应用上下文被销毁
