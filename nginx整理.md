@@ -183,3 +183,6 @@ location /i/ {
 - root响应的路径：配置的路径+完整访问路径(完整的location配置路径+静态文件)
 - alias响应的路径：配置的路径+静态文件(去除location中配置的路径)
 
+## proxy_redirect
+
+`proxy_redirect http:// $scheme://` 表示在程序中有redirect跳转时，将采用原有传输协议方式跳转，即如果是以https请求，在跳转后依然是https
