@@ -2,8 +2,8 @@
 title: Spring启动过程分析3(invokeBeanFactoryPostProcessors)
 ---
 
-在Spring容器中找出实现了BeanFactoryPostProcessor接口的processor并执行。Spring容器会委托给PostProcessorRegistrationDelegate的invokeBeanFactoryProcessors方法执行。
-
+在Spring容器中找出实现了BeanDefinitionRegistryPostProcessor以及BeanFactoryPostProcessor接口的processor并执行。Spring容器会委托给PostProcessorRegistrationDelegate的invokeBeanFactoryProcessors方法执行。
+<!--more-->
 ```java
 PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 ```
@@ -21,15 +21,21 @@ invokeBeanFactoryPostProcessors代码如下：
 ```java
 public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 	
-	// 首先调用BeanDefinitionRegistryPostProcessors
+	// 首先处理作为参数传入的beanFactoryPostProcessors
 	Set<String> processedBeans = new HashSet<String>();
 	
 	if (beanFactory instanceof BeanDefinitionRegistry) {
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+		
 		List<BeanFactoryPostProcessor> regularPostProcessors = new LinkedList<BeanFactoryPostProcessor>();
+		
       	List<BeanDefinitionRegistryPostProcessor> registryPostProcessors = new LinkedList<BeanDefinitionRegistryPostProcessor>();
       
     	for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
+    	   /**
+    	    * 如果postProcessor是BeanDefinitionRegistryPostProcessor，则调用postProcessBeanDefinitionRegistry对beanFactory进行处理。然后加入registryPostProcessors
+    	    * 否则加入regularPostProcessors
+    	    */
         	if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
             	BeanDefinitionRegistryPostProcessor registryPostProcessor = (BeanDefinitionRegistryPostProcessor) postProcessor;
             	registryPostProcessor.postProcessBeanDefinitionRegistry(registry);
@@ -39,7 +45,10 @@ public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFacto
             }
     	}
     
-    	String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
+		/**
+		 * 获取beanFactory中的BeanDefinitionRegistryPostProcessor
+		 */
+		String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
     
       	/**
       	 * 实现PriorityOrdered接口的BeanDefinitionRegistryPostProcessor先全部找出来，然后排序后依次执行
@@ -88,6 +97,15 @@ public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFacto
           	}
       	}
       
+      /**
+       * 注意，上面的invokeBeanDefinitionRegistryPostProcessors所做的是：
+       * 调用BeanDefinitionRegistryPostProcessor的postProcessBeanDefinitionRegistry来处理beanFactory
+       */
+       
+      /**
+       * 现在invokeBeanFactoryPostProcessors所做的是：
+       * 调用BeanFactoryPostProcessor的postProcessBeanFactory来处理beanFactory
+       */
       	invokeBeanFactoryPostProcessors(registryPostProcessors, beanFactory);
       	invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 	}
@@ -95,9 +113,15 @@ public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFacto
     	invokeBeanFactoryPostProcessors(beanFactoryPostProcessors, beanFactory);
   	}
   
+   /**
+    * 获取beanFactory中的BeanFactoryPostProcessor
+    */
   	String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
   	
-  	// 将BeanFactoryPostProcessors分成实现了PriorityOrdered, Ordered的类以及其他的类
+  	/**
+  	 * 将BeanFactoryPostProcessors分成实现了PriorityOrdered, Ordered的类以及其他的类
+  	 * 然后分别执行invokeBeanFactoryPostProcessors，调用BeanFactoryPostProcessor的postProcessBeanFactory来处理beanFactory
+  	 */
   	List<BeanFactoryPostProcessor> priorityOrderedPostProcessors = new ArrayList<BeanFactoryPostProcessor>();
   	List<String> orderedPostProcessorNames = new ArrayList<String>();
   	List<String> nonOrderedPostProcessorNames = new ArrayList<String>();
@@ -138,3 +162,41 @@ public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFacto
   	beanFactory.clearMetadataCache();
 }
 ```
+
+## 从容器中获取某个类的beanName
+
+从容器中获取某个类（比如，BeanDefinitionRegistryPostProcessor）的beanName，由`DefaultListableBeanFactory.getBeanNamesForType`来完成，进一步调用同一个类下的`doGetBeanNamesForType`。
+
+`doGetBeanNamesForType`分别在beanDefinitionNames和manualSingletonNames中寻找匹配类型的beanName。
+
+判断是否匹配类型使用isTypeMatch，调用`typeToMatch.isAssignableFrom(beanType)`判断`typeToMatch`是否可以由`beanType`转换过来，最终调用`ClassUtils.isAssignable(Class<?> lhsType, Class<?> rhsType)`来判断`rhsType`是否可以赋值给`lhsType`。
+
+## 调用BeanDefinitionRegistryPostProcessor
+
+```java
+private static void invokeBeanDefinitionRegistryPostProcessors(
+		Collection<? extends BeanDefinitionRegistryPostProcessor> postProcessors, BeanDefinitionRegistry registry) {
+
+	for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
+		postProcessor.postProcessBeanDefinitionRegistry(registry);
+	}
+}
+```
+
+可以看到，这里分别调用了每个`BeanDefinitionRegistryPostProcessor`的`postProcessBeanDefinitionRegistry`方法。
+
+## 调用BeanFactoryPostProcessor
+
+```java
+private static void invokeBeanFactoryPostProcessors(
+		Collection<? extends BeanFactoryPostProcessor> postProcessors, ConfigurableListableBeanFactory beanFactory) {
+
+	for (BeanFactoryPostProcessor postProcessor : postProcessors) {
+		postProcessor.postProcessBeanFactory(beanFactory);
+	}
+}
+```
+
+可以看到，这里分别调用了每个`BeanFactoryPostProcessor`的`postProcessBeanFactory`方法。
+
+

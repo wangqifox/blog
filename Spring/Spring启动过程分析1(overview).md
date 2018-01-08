@@ -18,7 +18,7 @@ public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
 	refresh();
 }
 ```
-
+<!--more-->
 ## AnnotationConfigApplicationContext初始化
 
 `AnnotationConfigApplicationContext(Class<?>... annotatedClasses)`调用AnnotationConfigApplicationContext的空构造函数`AnnotationConfigApplicationContext()`进行初始化
@@ -56,6 +56,8 @@ public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environmen
 }
 ```
 
+`AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry)`中调用`DefaultListableBeanFactory.registerBeanDefinition`来注册各种BeanPostProcessor的BeanDefinition
+
 ### ClassPathBeanDefinitionScanner
 
 ClassPathBeanDefinitionScanner构造函数：
@@ -84,21 +86,35 @@ public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean u
 
 ## 注册初始配置文件
 
-注册初始配置文件使用了AnnotationConfigApplicationContext构造函数中初始化的AnnotatedBeanDefinitionReader。调用reader.register方法，最终调用的是`registerBean(Class<?> annotatedClass, String name, Class<? extends Annotation>... qualifiers)`，主要步骤如下：
+注册初始配置文件使用了AnnotationConfigApplicationContext构造函数中初始化的AnnotatedBeanDefinitionReader。调用reader.register方法，最终调用的是`AnnotationConfigApplicationContext.registerBean(Class<?> annotatedClass, String name, Class<? extends Annotation>... qualifiers)`，主要步骤如下：
 
 1. 先将Class包装成AnnotatedGenericBeanDefinition 
 
 	`AnnotatedGenericBeanDefinition abd = AnnotatedGenericBeanDefinition(annotatedClass)`
 	
-2. 再将AnnotatedGenericBeanDefinition包装成BeanDefinitionHolder
+	其中，metadata为StandardAnnotationMetadata，里面的annotations保存了配置类中的注释(比如：Configuration, ComponentScan等)
+
+2. 调用`AnnotationConfigUtils.processCommonDefinitionAnnotations(abd)`，处理常见的注释
+
+    判断配置文件是否有一下几个注释，分别进行处理：
+    
+    1. Lazy
+    2. Primary
+    3. DependsOn
+    4. Role
+    5. Description
+
+3. 再将AnnotatedGenericBeanDefinition包装成BeanDefinitionHolder
 
 	`BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName)`
 
-3. 最后注册BeanDefinition
+4. 调用`AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry)`
+
+5. 最后注册BeanDefinition
 
 	`BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry)`
 	
-### 注册BeanDefinition
+## 注册BeanDefinition
 
 注册BeanDefinition调用的是`DefaultListableBeanFactory.registerBeanDefinition`，该方法在后面的启动过程中还会经常使用。主要的功能是将bean的名称(beanName)和bean的定义(beanDefinition)放入beanDefinitionMap中:
 
@@ -210,3 +226,4 @@ public void refresh() throws BeansException, IllegalStateException {
 	}
 }
 ```
+

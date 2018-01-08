@@ -3,7 +3,7 @@ title: Spring启动过程分析6(finishRefresh)
 ---
 
 finishRefresh方法调用LifecycleProcessor的onRefresh()方法，发送ContextRefreshedEvent
-
+<!--more-->
 `AbstractApplicationContext.finishRefresh`:
 
 ```java
@@ -105,3 +105,4 @@ public void onRefresh() {
 	```
 	
 	可以看到最终调用的Lifecycle接口的start方法
+

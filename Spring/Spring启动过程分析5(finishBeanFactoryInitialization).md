@@ -3,22 +3,17 @@ title: Spring启动过程分析5(finishBeanFactoryInitialization)
 ---
 
 实例化BeanFactory中已经被注册但是未实例化的所有实例(懒加载的不需要实例化)。比如invokeBeanFactoryPostProcessors方法中根据各种注解解析出来的类，在这个时候都会被初始化。实例化的过程各种BeanPostProcessor开始起作用。
-
+<!--more-->
 ```java
 /**
  * 初始化所有剩余的单例bean
  */
 protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
-	// Initialize conversion service for this context.
-	if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
-			beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
-		beanFactory.setConversionService(
-				beanFactory.getBean(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class));
+	// 为容器注册conversion service，用于转化属性值
+	if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) && beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
+		beanFactory.setConversionService(beanFactory.getBean(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class));
 	}
 
-	// Register a default embedded value resolver if no bean post-processor
-	// (such as a PropertyPlaceholderConfigurer bean) registered any before:
-	// at this point, primarily for resolution in annotation attribute values.
 	/**
 	 * 如果没有的话(比如PropertyPlaceholderConfigurer)，注册一个默认的嵌入值解析器(value resoler)。
 	 * 用于解析通过注解导入的值。
@@ -49,6 +44,8 @@ protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory b
 }
 ```
 
+## 实例化单例对象
+
 `beanFactory.preInstantiateSingletons`调用的是`DefaultListableBeanFactory.preInstantiateSingletons`：
 
 ```java
@@ -57,8 +54,7 @@ public void preInstantiateSingletons() throws BeansException {
 		this.logger.debug("Pre-instantiating singletons in " + this);
 	}
 
-	// Iterate over a copy to allow for init methods which in turn register new bean definitions.
-	// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
+	// 获取当前所有bean的名称
 	List<String> beanNames = new ArrayList<String>(this.beanDefinitionNames);
 
 	// 触发所有非延迟加载单例beans的初始化，主要步骤为调用getBean
@@ -93,6 +89,7 @@ public void preInstantiateSingletons() throws BeansException {
 	// 触发post-initialization的回调，主要步骤为调用afterSingletonsInstantiated
 	for (String beanName : beanNames) {
 		Object singletonInstance = getSingleton(beanName);
+		// 如果bean是SmartInitializingSingleton实例，则调用其中实现的afterSingletonsInstantiated方法
 		if (singletonInstance instanceof SmartInitializingSingleton) {
 			final SmartInitializingSingleton smartSingleton = (SmartInitializingSingleton) singletonInstance;
 			if (System.getSecurityManager() != null) {
@@ -112,19 +109,16 @@ public void preInstantiateSingletons() throws BeansException {
 }
 ```
 
-## bean初始化
+### bean初始化
 
 bean初始化调用的是`AbstractBeanFactory.getBean`，最终调用的是`AbstractBeanFactory.doGetBean`
 
 ```java
-protected <T> T doGetBean(
-		final String name, final Class<T> requiredType, final Object[] args, boolean typeCheckOnly)
-		throws BeansException {
+protected <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args, boolean typeCheckOnly) throws BeansException {
 
 	final String beanName = transformedBeanName(name);
 	Object bean;
 
-	// Eagerly check singleton cache for manually registered singletons.
 	// 检查是否已经手动注册过了
 	Object sharedInstance = getSingleton(beanName);
 	if (sharedInstance != null && args == null) {
@@ -139,15 +133,13 @@ protected <T> T doGetBean(
 		}
 		bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 	}
-
 	else {
-		// Fail if we're already creating this bean instance:
-		// We're assumably within a circular reference.
+		// 检查是否有循环引用
 		if (isPrototypeCurrentlyInCreation(beanName)) {
 			throw new BeanCurrentlyInCreationException(beanName);
 		}
 
-		// Check if bean definition exists in this factory.
+		// 检查bean definition是否存在
 		BeanFactory parentBeanFactory = getParentBeanFactory();
 		if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 			// Not found -> check parent.
@@ -202,7 +194,6 @@ protected <T> T doGetBean(
 				});
 				bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 			}
-
 			else if (mbd.isPrototype()) {
 				// It's a prototype -> create a new instance.
 				Object prototypeInstance = null;
@@ -215,7 +206,6 @@ protected <T> T doGetBean(
 				}
 				bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 			}
-
 			else {
 				String scopeName = mbd.getScope();
 				final Scope scope = this.scopes.get(scopeName);
@@ -268,6 +258,8 @@ protected <T> T doGetBean(
 }
 ```
 
+### 创建bean实例
+
 创建bean实例的方法为：`AbstractAutowireCapableBeanFactory.createBean`：
 
 ```java
@@ -277,9 +269,7 @@ protected Object createBean(String beanName, RootBeanDefinition mbd, Object[] ar
 	}
 	RootBeanDefinition mbdToUse = mbd;
 
-	// Make sure bean class is actually resolved at this point, and
-	// clone the bean definition in case of a dynamically resolved Class
-	// which cannot be stored in the shared merged bean definition.
+	// 解析bean定义，获取解析过的Class
 	Class<?> resolvedClass = resolveBeanClass(mbd, beanName);
 	if (resolvedClass != null && !mbd.hasBeanClass() && mbd.getBeanClassName() != null) {
 		mbdToUse = new RootBeanDefinition(mbd);
@@ -296,7 +286,7 @@ protected Object createBean(String beanName, RootBeanDefinition mbd, Object[] ar
 	}
 
 	try {
-		// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
+		// 在这里，beanPostProcessor可以创建目标bean的代理，然后返回
 		Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 		if (bean != null) {
 			return bean;
@@ -314,6 +304,8 @@ protected Object createBean(String beanName, RootBeanDefinition mbd, Object[] ar
 	return beanInstance;
 }
 ```
+
+#### doCreateBean
 
 `createBean`主要的函数为`doCreateBean`：
 
@@ -333,7 +325,7 @@ protected Object doCreateBean(final String beanName, final RootBeanDefinition mb
 	Class<?> beanType = (instanceWrapper != null ? instanceWrapper.getWrappedClass() : null);
 	mbd.resolvedTargetType = beanType;
 
-	// Allow post-processors to modify the merged bean definition.
+	// 调用MergedBeanDefinitionPostProcessor的postProcessMergedBeanDefinition来修改merged bean definition
 	synchronized (mbd.postProcessingLock) {
 		if (!mbd.postProcessed) {
 			try {
@@ -347,10 +339,11 @@ protected Object doCreateBean(final String beanName, final RootBeanDefinition mb
 		}
 	}
 
-	// Eagerly cache singletons to be able to resolve circular references
-	// even when triggered by lifecycle interfaces like BeanFactoryAware.
-	boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
-			isSingletonCurrentlyInCreation(beanName));
+   /**
+    * 缓存单例，用于解决循环引用的问题。
+    * lifecycle接口比如BeanFactoryAware可能会引发循环引用
+    */
+	boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences && isSingletonCurrentlyInCreation(beanName));
 	if (earlySingletonExposure) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Eagerly caching bean '" + beanName +
@@ -436,19 +429,21 @@ protected Object doCreateBean(final String beanName, final RootBeanDefinition mb
 
 ```java
 protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, Object[] args) {
-	// Make sure bean class is actually resolved at this point.
+	// 解析bean的定义
 	Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
+   // 判断bean是否是public
 	if (beanClass != null && !Modifier.isPublic(beanClass.getModifiers()) && !mbd.isNonPublicAccessAllowed()) {
 		throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 				"Bean class isn't public, and non-public access not allowed: " + beanClass.getName());
 	}
-
+   
+   // 如果bean有工厂方法，则使用工厂方法来实例化，然后直接返回
 	if (mbd.getFactoryMethodName() != null)  {
 		return instantiateUsingFactoryMethod(beanName, mbd, args);
 	}
 
-	// Shortcut when re-creating the same bean...
+	// 如果显式指定了构造函数则调用`autowireConstructor`，否则调用`instantiateBean`
 	boolean resolved = false;
 	boolean autowireNecessary = false;
 	if (args == null) {
@@ -459,6 +454,7 @@ protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd
 			}
 		}
 	}
+	// 如果可以确定构造函数，则直接实例化bean
 	if (resolved) {
 		if (autowireNecessary) {
 			return autowireConstructor(beanName, mbd, null, null);
@@ -468,7 +464,7 @@ protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd
 		}
 	}
 
-	// Need to determine the constructor...
+	// 如果不能确定构造函数，则尝试从BeanPostProcessor中获取构造函数
 	Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 	if (ctors != null ||
 			mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_CONSTRUCTOR ||
@@ -476,14 +472,60 @@ protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd
 		return autowireConstructor(beanName, mbd, ctors, args);
 	}
 
-	// No special handling: simply use no-arg constructor.
+	// 如果还是无法确定构造函数，则使用默认的无参构造函数
 	return instantiateBean(beanName, mbd);
 }
 ```
 
-如果显式指定了构造函数则调用`autowireConstructor`，否则调用`instantiateBean`
-
 #### autowireConstructor
+
+在构造函数中注入相应的参数
+
+```java
+protected BeanWrapper autowireConstructor(String beanName, RootBeanDefinition mbd, Constructor<?>[] ctors, Object[] explicitArgs) {
+
+	return new ConstructorResolver(this).autowireConstructor(beanName, mbd, ctors, explicitArgs);
+}
+```
+
+`autowireConstructor`实际的工作在于寻找构造函数、参数，然后调用`InstantiationStrategy.instantiate`来实例化bean。
+
+```java
+beanInstance = this.beanFactory.getInstantiationStrategy().instantiate(mbd, beanName, this.beanFactory, constructorToUse, argsToUse);
+```
+
+##### InstantiationStrategy.instantiate
+
+```java
+public Object instantiate(RootBeanDefinition bd, String beanName, BeanFactory owner, final Constructor<?> ctor, Object... args) {
+    /**
+     * 如果bean中有被容器重写的方法，则调用instantiateWithMethodInjection实例化bean
+     * 否则，调用BeanUtils.instantiateClass实例化bean
+     */
+    if (bd.getMethodOverrides().isEmpty()) {
+        if (System.getSecurityManager() != null) {
+				// use own privileged to change accessibility (when security is on)
+				AccessController.doPrivileged(new PrivilegedAction<Object>() {
+					@Override
+					public Object run() {
+						ReflectionUtils.makeAccessible(ctor);
+						return null;
+					}
+				});
+		  }
+		  /**
+		   * 调用ctor.newInstance(args)来实例化
+		   */
+	     return BeanUtils.instantiateClass(ctor, args);
+    }
+    else {
+        /**
+         * 使用cglib来生成一个子类
+         */
+        return instantiateWithMethodInjection(bd, beanName, owner, ctor, args);
+    }
+}
+```
 
 #### AbstractAutowireCapableBeanFactory.instantiateBean
 
@@ -520,6 +562,8 @@ protected BeanWrapper instantiateBean(final String beanName, final RootBeanDefin
 ```
 
 实际调用的是`SimpleInstantiationStrategy.instantiate`：
+
+##### SimpleInstantiationStrategy.instantiate
 
 ```java
 public Object instantiate(RootBeanDefinition bd, String beanName, BeanFactory owner) {
@@ -572,18 +616,17 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
 
 	if (bw == null) {
 		if (!pvs.isEmpty()) {
-			throw new BeanCreationException(
-					mbd.getResourceDescription(), beanName, "Cannot apply property values to null instance");
+			throw new BeanCreationException(mbd.getResourceDescription(), beanName, "Cannot apply property values to null instance");
 		}
 		else {
-			// Skip property population phase for null instance.
+			// 如果bean为null，则跳过填充的阶段
 			return;
 		}
 	}
 
-	// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
-	// state of the bean before properties are set. This can be used, for example,
-	// to support styles of field injection.
+	/**
+	 * 调用InstantiationAwareBeanPostProcessor来修改bean的状态。可以用于支持字段注入
+	 */
 	boolean continueWithPropertyPopulation = true;
 
 	if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
@@ -598,10 +641,12 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
 		}
 	}
 
+   // 如果调用InstantiationAwareBeanPostProcessor.postProcessAfterInstantiation返回false，则跳过填充阶段。表示不再需要继续填充
 	if (!continueWithPropertyPopulation) {
 		return;
 	}
 
+   // 如果自动装配的类型有AUTOWIRE_BY_NAME和AUTOWIRE_BY_TYPE，则分别尝试根据名称自动装配、根据类型自动装配
 	if (mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_BY_NAME ||
 			mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_BY_TYPE) {
 		MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
@@ -648,6 +693,8 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
 	applyPropertyValues(beanName, mbd, bw, pvs);
 }
 ```
+
+#### postProcessPropertyValues
 
 以AutowiredAnnotationBeanPostprocessor为例，它委托给InjectionMetadata对象来完成属性注入，`AutowiredAnnotationBeanPostprocessor.postProcessPropertyValues`：
 
@@ -713,6 +760,84 @@ public PropertyValues postProcessPropertyValues(PropertyValues pvs, PropertyDesc
 	```
 
 可以看到，如果是成员变量则调用`field.set`来设置变量，如果是方法则调用`method.invoke`来调用方法
+
+#### applyPropertyValues
+
+注入属性值
+
+最终调用的方法为`AbstractNestablePropertyAccessor.setPropertyValue`:
+
+```java
+protected void setPropertyValue(PropertyTokenHolder tokens, PropertyValue pv) throws BeansException {
+	if (tokens.keys != null) {
+		processKeyedProperty(tokens, pv);
+	}
+	else {
+		processLocalProperty(tokens, pv);
+	}
+}
+```
+
+其中processKeyedProperty设置array、list、map三种类型的属性；processLocalProperty设置field、bean类型的属性。
+
+field类型的属性通过`DirectFieldAccessor.setValue`来设置：
+
+```java
+public void setValue(Object object, Object value) throws Exception {
+	try {
+		ReflectionUtils.makeAccessible(this.field);
+		this.field.set(object, value);
+	}
+	catch (IllegalAccessException ex) {
+		throw new InvalidPropertyException(getWrappedClass(), this.field.getName(),
+				"Field is not accessible", ex);
+	}
+}
+```
+
+bean类型的属性通过`BeanWrapperImpl.setValue`来设置：
+
+```java
+public void setValue(final Object object, Object valueToApply) throws Exception {
+   // 获取属性写入的方法
+	final Method writeMethod = (this.pd instanceof GenericTypeAwarePropertyDescriptor ?
+			((GenericTypeAwarePropertyDescriptor) this.pd).getWriteMethodForActualAccess() :
+			this.pd.getWriteMethod());
+	if (!Modifier.isPublic(writeMethod.getDeclaringClass().getModifiers()) && !writeMethod.isAccessible()) {
+		if (System.getSecurityManager() != null) {
+			AccessController.doPrivileged(new PrivilegedAction<Object>() {
+				@Override
+				public Object run() {
+					writeMethod.setAccessible(true);
+					return null;
+				}
+			});
+		}
+		else {
+			writeMethod.setAccessible(true);
+		}
+	}
+	final Object value = valueToApply;
+	if (System.getSecurityManager() != null) {
+		try {
+			AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+				@Override
+				public Object run() throws Exception {
+					writeMethod.invoke(object, value);
+					return null;
+				}
+			}, acc);
+		}
+		catch (PrivilegedActionException ex) {
+			throw ex.getException();
+		}
+	}
+	else {
+	   // 使用writeMethod类设置属性
+		writeMethod.invoke(getWrappedInstance(), value);
+	}
+}
+```
 
 ### bean初始化
 
@@ -871,3 +996,5 @@ protected void invokeCustomInitMethod(String beanName, final Object bean, RootBe
 	}
 }
 ```
+
+

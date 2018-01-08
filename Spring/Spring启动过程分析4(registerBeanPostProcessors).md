@@ -5,7 +5,7 @@ title: Spring启动过程分析4(registerBeanPostProcessors)
 从Spring容器中找出实现了BeanPostProcessor接口的bean，并设置到BeanFactory的属性中。之后bean被实例化的时候会调用这个BeanPostProcessor。
 
 该方法委托给了PostProcessorRegistrationDelegate类的registerBeanPostProcessors方法执行。
-
+<!--more-->
 ```java
 protected void registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory) {
 	PostProcessorRegistrationDelegate.registerBeanPostProcessors(beanFactory, this);
@@ -18,12 +18,13 @@ registerBeanPostProcessors代码如下：
 public static void registerBeanPostProcessors(
 		ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext) {
 	
-	// 获取所有BeanPostProcessor类的名称
+	// 获取beanFactory中所有BeanPostProcessor类的名称
 	String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, true, false);
 
-	// Register BeanPostProcessorChecker that logs an info message when
-	// a bean is created during BeanPostProcessor instantiation, i.e. when
-	// a bean is not eligible for getting processed by all BeanPostProcessors.
+	/**
+	 * 注册BeanPostProcessorChecker，主要功能是BeanPostProcessor实例化期间bean被创建时打印日志，
+	 * 或者在bean被BeanPostProcessors处理失败时打印日志
+	 */
 	int beanProcessorTargetCount = beanFactory.getBeanPostProcessorCount() + 1 + postProcessorNames.length;
 	beanFactory.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, beanProcessorTargetCount));
 
@@ -48,7 +49,9 @@ public static void registerBeanPostProcessors(
 		}
 	}
 
-	// 注册实现了PriorityOrdered接口的BeanPostProcessors	sortPostProcessors(beanFactory, priorityOrderedPostProcessors);
+	// 注册实现了PriorityOrdered接口的BeanPostProcessors，当前主要有AutowiredAnnotationBeanPostProcessor、RequiredAnnotationBeanPostProcessor、CommonAnnotationBeanPostProcessor
+	sortPostProcessors(beanFactory, priorityOrderedPostProcessors);
+	// 注册到beanFactory中。添加到List<BeanPostProcessor> beanPostProcessors中
 	registerBeanPostProcessors(beanFactory, priorityOrderedPostProcessors);
 
 	// 注册实现了Ordered接口的BeanPostProcessors	List<BeanPostProcessor> orderedPostProcessors = new ArrayList<BeanPostProcessor>();
@@ -82,6 +85,16 @@ public static void registerBeanPostProcessors(
 	beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(applicationContext));
 }
 ```
+
+注册完成后，beanFactory的beanPostProcessors中有7个BeanPostProcessor：
+
+1. ApplicationContextAwareProcessor
+2. ConfigurationClassPostProcessor$ImportAwareBeanPostProcessor
+3. PostProcessorRegistrationDelegate$BeanPostProcessorChecker
+4. CommonAnnotationBeanPostProcessor
+5. AutowiredAnnotationBeanPostProcessor
+6. RequireAnnotationBeanPostProcessor
+7. ApplicationListenerDetector
 
 这里的过程跟invokeBeanFactoryPostProcessors类似：
 
@@ -311,13 +324,15 @@ protected RootBeanDefinition getMergedBeanDefinition(
 }
 ```
 
+#### isTypeMatch
+
 `isTypeMatch`判断名称为beanName的bean是否是type类型：
 
 ```java
 public boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException {
 	String beanName = transformedBeanName(name);
 
-	// Check manually registered singletons.
+	// 根据beanName从singletonObjects中获取单例对象
 	Object beanInstance = getSingleton(beanName, false);
 	if (beanInstance != null) {
 		if (beanInstance instanceof FactoryBean) {
@@ -545,3 +560,5 @@ public static boolean isAssignable(Class<?> lhsType, Class<?> rhsType) {
 	return false;
 }
 ```
+
+
