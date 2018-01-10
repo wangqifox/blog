@@ -628,6 +628,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                  * 1. 以指定的超时时间从列队中取任务
                  * 2. core thread没有超时
                  */
+                // 如果没有后续的任务添加到workQueue队列中，则线程池阻塞在workQueue.take()处，等待新的任务到来。于是这个worker就处于等待状态。
                 Runnable r = timed ? 
                     workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
                     workQueue.take();
