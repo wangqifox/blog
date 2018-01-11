@@ -239,3 +239,98 @@ private void unparkSuccessor(Node node) {
 
 如果这个后继节点为空或者它的状态为`CANCELLED`，则从双向链表的尾部寻找一个状态不为`CANCELLED`的节点，唤醒它。
 
+## lockInterruptibly
+
+该方法和`lock`方法的区别是`lockInterruptibly`会响应中断。也就是说，如果线程在`lockInterruptibly`处等待，可以使用interrupt来使线程继续执行(抛出`InterruptedException`)，而如果线程在`lock`处等待，线程不会响应中断。
+
+在ReentrantLock中，`lockInterruptibly`方法调用的是AQS中的`acquireInterruptibly`：
+
+```java
+public void lockInterruptibly() throws InterruptedException {
+    sync.acquireInterruptibly(1);
+}
+```
+
+```java
+public final void acquireInterruptibly(int arg)
+        throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    if (!tryAcquire(arg))
+        doAcquireInterruptibly(arg);
+}
+```
+
+首先仍然调用`tryAcquire`方法判断是否可以获得锁，如果无法获得锁，执行`doAcquireInterruptibly`方法：
+
+```java
+private void doAcquireInterruptibly(int arg) throws InterruptedException {
+    final Node node = addWaiter(Node.EXCLUSIVE);
+    boolean failed = true;
+    try {
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head && tryAcquire(arg)) {
+                setHead(node);
+                p.next = null; // help GC
+                failed = false;
+                return;
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                throw new InterruptedException();
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+```
+
+该方法和前面分析过的`acquireQueued`方法差不多，真正的区别在于`parkAndCheckInterrupt`被中断唤醒之后的操作，`parkAndCheckInterrupt`被中断唤醒之后返回值为true，因此进入if代码块中：
+
+`acquireQueued`方法仅仅将变量`interrupted`设为true，进入下一次循环，下一次循环中如果仍然获取不到锁，线程再一次进入等待状态，因此给程序的现象就是线程无法响应中断。
+
+而`doAcquireInterruptibly`方法抛出了`InterruptedException`，线程得以退出等待状态。因为此时的`failed`变量为true，所以最后还是执行`cancelAcquire`方法：
+
+```java
+private void cancelAcquire(Node node) {
+    if (node == null)
+        return;
+
+    node.thread = null;
+
+    Node pred = node.prev;
+    while (pred.waitStatus > 0)
+        node.prev = pred = pred.prev;
+
+    Node predNext = pred.next;
+
+    node.waitStatus = Node.CANCELLED;
+
+    if (node == tail && compareAndSetTail(node, pred)) {
+        compareAndSetNext(pred, predNext, null);
+    } else {
+        int ws;
+        if (pred != head &&
+            ((ws = pred.waitStatus) == Node.SIGNAL ||
+             (ws <= 0 && compareAndSetWaitStatus(pred, ws, Node.SIGNAL))) &&
+            pred.thread != null) {
+            Node next = node.next;
+            if (next != null && next.waitStatus <= 0)
+                compareAndSetNext(pred, predNext, next);
+        } else {
+            unparkSuccessor(node);
+        }
+
+        node.next = node; // help GC
+    }
+}
+```
+
+首先跳过node前面被`CANCELLED`的节点。
+
+如果node是tail(尾节点)，将tail指向的位置向前移动一个节点，即将node节点从链表的末尾中删除。
+
+如果node不是tail。如果pred(node的前节点)不是head，且它的状态为SIGNAL(等待被唤醒)，且pred的线程不为null，则将node的后节点赋值给pred的后节点，即将node节点从链表的中间删除。否则(pred是头结点，或者状态不为SIGNAL，或者pred的线程为null)唤醒node的后节点。
+
