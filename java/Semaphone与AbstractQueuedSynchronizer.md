@@ -5,7 +5,7 @@ title: Semaphone与AbstractQueuedSynchronizer
 Semaphone也是一个类似锁的组件，它管理的是多个资源的分配，实现的是AbstractQueuedSynchronizer抽象类，有了前面`ReentrantLock与AbstractQueuedSynchronizer`的铺垫，Semaphone的分析变得无比轻松。
 
 和`ReentrantLock`类似，`Semaphone`也分为公平锁和非公平锁。方便起见只分析非公平锁，两者差别不大。
-
+<!--more-->
 ## acquire
 
 `acquire`在`Semaphone`类中有两个方法，`acquire()`和`acquire(int permits)`。唯一的区别是`acquire()`请求一个资源，相当于`acquire(1)`。我们来看`acquire(int permits)`方法：
