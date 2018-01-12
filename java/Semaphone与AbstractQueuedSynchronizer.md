@@ -78,6 +78,8 @@ private void doAcquireSharedInterruptibly(int arg) throws InterruptedException {
 1. 新建的node类型为`Node.SHARED`
 2. 获得锁之后调用`setHeadAndPropagate`
 
+重点在于`setHeadAndPropagate`方法：
+
 ```java
 private void setHeadAndPropagate(Node node, int propagate) {
     Node h = head; // Record old head for check below
@@ -100,7 +102,19 @@ private void setHeadAndPropagate(Node node, int propagate) {
 2. h(原先的头结点)为null
 3. h处于`SIGNAL`、`CONDITION`、`PROPAGATE`的其中一种状态
 
-且node的后节点不为null且为共享模式，则调用`doRleaseShared`释放共享的节点
+且node的后节点为null或者为共享模式，则调用`doRleaseShared`释放共享的节点
+
+为什么下一个节点为null的时候也需要唤醒操作呢？仔细理解一下这句话：
+
+> The conservatism in both of these checks may cause unnecessary wake-ups, but only when there are multiple racing acquires/releases, so most need signals now or soon anyway.
+
+这种保守的检查方式可能会引起多次不必要的线程唤醒操作，但这些情况仅存在于多线程并发的`acquire/release`操作，所以大多数线程需要立即或者很快地一个信号。这个信号就是执行unpark方法。因为LockSupport在unpark的时候，相当于给了一个信号，即使这时候没有线程在park状态，之后有线程执行park的时候也会读到这个信号就不会被挂起。
+
+简单点说，就是线程在执行时，如果之前没有unpark操作，在执行park时会阻塞该线程；但如果在park之前执行过一次或多次unpark(unpark调用多次和一次是一样的，结果不会累加)这时执行park时并不会阻塞该线程。
+
+所以，如果在唤醒node的时候下一个节点刚好添加到队列中，就可能避免了一次阻塞的操作。
+
+所以这里的propagate表示传播，传播的过程就是只要成功的获取到共享锁就唤醒下一个节点。
 
 ```java
 private void doReleaseShared() {
@@ -126,7 +140,19 @@ private void doReleaseShared() {
 
 如果head(头节点)不为null且不为tail(尾节点)，进入if方法体。当head处于`SIGNAL`状态时，如果可以将其状态修改为0，调用`unparkSuccessor`唤醒后节点，否则(被其他线程修改掉了)进行下一次循环。当head处于状态0，如果可以将其状态修改为`PROPAGATE`则继续执行，否则(被其他线程修改掉了)进行下一次循环。
 
-前面的步骤只有头节点没有发生改变才能跳出循环，如果头节点发生了改变(意味着释放锁的过程没有结束)，则继续循环。
+什么时候状态会是SIGNAL呢？回顾一下`shouldParkAfterFailedAcquire`方法，当状态不为`CANCELED`或者`SIGNAL`时，为了保险起见，这里把状态都设置成了`SIGNAL`，然后会再次循环进行判断是否需要阻塞。
+
+这里为什么不直接把SIGNAL设置为PROPAGATE，而是先把SIGNAL设置为0，然后再设置为PROPAGATE呢？
+
+原因在于`unparkSuccessor`方法，该方法会判断当前节点的状态是否小于0，如果小于0则将h的状态设置为0，如果在这里直接设置为PROPAGATE状态的话，则相当于多做了一次CAS操作。
+
+```java
+int ws = node.waitStatus;
+if (ws < 0)
+    compareAndSetWaitStatus(node, ws, 0);
+```
+
+其实这里只判断状态为SIGNAL和0还有另一个原因，那就是当前执行doReleaseShared循环时的状态只可能为SIGNAL和0，因为如果这时没有后继节点的话，当前节点状态没有被修改，是初始的0；如果在执行setHead方法之前，这时刚好有后继节点被添加到队列中的话，因为这时后继节点判断`p == head`为false，所以会执行shouldParkAfterFailedAcquire方法，将当前节点的状态设置为SIGNAL。当状态为0时设置状态为PROPAGATE成功，则判断`h == head`结果为true，表示当前节点是队列中的唯一一个节点，所以直接就返回了；如果为false，则说明已经有后继节点的线程设置了head，这时不返回继续循环，但刚才获取的h已经用不到了，等待着被回收。
 
 ## acquireUninterruptibly
 
@@ -207,5 +233,12 @@ protected final boolean tryReleaseShared(int releases) {
 这方法是一个还资源的过程，就是将AQS中的state加回一定的数量，保证资源不溢出，然后设置state。
 
 回到`releaseShared`方法，如果释放资源成功，调用`doReleaseShared`唤醒正在等待资源的线程。前文已经分析，不再赘述。
+
+## 独占锁和共享锁的区别
+
+- 独占锁在获取节点之后并且还未释放时，其他的节点会一直阻塞，直到第一个节点被释放才会唤醒
+- 共享锁在获取节点之后会立即唤醒队列中的后继节点，每个及诶单都会唤醒自己的后继节点，这就是共享状态的传播
+
+
 
 
