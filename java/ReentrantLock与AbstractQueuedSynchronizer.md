@@ -237,7 +237,9 @@ private void unparkSuccessor(Node node) {
 
 如果这个后继节点不为空，则通过`LockSupport.unpark`方法来唤醒对应被挂起的线程，于是该节点从`acquireQueued`方法的`parkAndCheckInterrupt`处唤醒，继续循环。判断`tryAcquire`是否能获得锁，能获得锁的话返回执行任务，如果获取锁又失败了，继续挂起等待。
 
-如果这个后继节点为空或者它的状态为`CANCELLED`，则从双向链表的尾部寻找一个状态不为`CANCELLED`的节点，唤醒它。
+如果这个后继节点为空或者它的状态为`CANCELLED`，则从双向链表的尾部遍历寻找一个状态不为`CANCELLED`的节点，唤醒它。
+
+至于为什么从尾部开始向前遍历，需要看后文的`lockInterruptibly`方法，其中的`cancelAcquire`方法中只是设置了next的变化，没有设置prev的变化，在最后由这样一行代码`node.next = node`，如果这时执行了`unparkSuccessor`方法，并且向后遍历的话，就成了死循环了，所以这时只有prev是稳定的。
 
 ## lockInterruptibly
 
@@ -291,7 +293,7 @@ private void doAcquireInterruptibly(int arg) throws InterruptedException {
 
 `acquireQueued`方法仅仅将变量`interrupted`设为true，进入下一次循环，下一次循环中如果仍然获取不到锁，线程再一次进入等待状态，因此给程序的现象就是线程无法响应中断。
 
-而`doAcquireInterruptibly`方法抛出了`InterruptedException`，线程得以退出等待状态。因为此时的`failed`变量为true，所以最后还是执行`cancelAcquire`方法：
+而`doAcquireInterruptibly`方法抛出了`InterruptedException`，线程得以退出等待状态。因为此时的`failed`变量为true，所以最后还需执行`cancelAcquire`方法，用于将该节点标记为取消状态：
 
 ```java
 private void cancelAcquire(Node node) {
@@ -328,9 +330,39 @@ private void cancelAcquire(Node node) {
 }
 ```
 
-首先跳过node前面被`CANCELLED`的节点。
+首先设置该节点不再关联任何线程，跳过node前面被`CANCELLED`的节点。
 
 如果node是tail(尾节点)，将tail指向的位置向前移动一个节点，即将node节点从链表的末尾中删除。
 
-如果node不是tail。如果pred(node的前节点)不是head，且它的状态为SIGNAL(等待被唤醒)，且pred的线程不为null，则将node的后节点赋值给pred的后节点，即将node节点从链表的中间删除。否则(pred是头结点，或者状态不为SIGNAL，或者pred的线程为null)唤醒node的后节点。
+如果node不是tail。
+
+    1. 如果pred(node的前节点)不是head，且它的状态为SIGNAL(等待被唤醒)，且pred的线程不为null，则将node的后节点赋值给pred的后节点，即将node节点从链表的中间删除。
+
+    2. 否则(pred是头结点，或者状态不为SIGNAL，或者pred的线程为null)唤醒node的后节点。
+
+然后将next指向了自己。
+
+这里可能会有疑问，既然要删除节点，为什么都没有对prev进行操作，而仅仅是修改了next？
+
+要明确的一点是，这里修改指针的操作都是CAS操作，在AQS中所有以`compareAndSet`开头的方法都是尝试更新，并不保证成功。
+
+那么在执行cancelAcquire方法时，当前节点的前继节点有可能已经执行完并移除队列了(参见`setHead`方法)，所以在这里只能用CAS来尝试更新，而就算是尝试更新，也只能更新next，不能更新prev，因为prev是不确定的，否则有可能会导致整个队列的不完整，例如把prev指向一个已经移除队列的node。
+
+什么时候修改prev呢？其实prev是由其他线程来修改的。回到`shouldParkAfterFailedAcquire`方法，该方法有这样一段代码：
+
+```java
+do {
+    node.prev = pred = pred.prev;
+} while (pred.waitStatus > 0);
+pred.next = node;
+```
+
+这段代码的作用就是通过prev遍历到第一个不是取消状态的node，并修改prev。
+
+这里为什么可以更新prev？因为`shouldParkAfterFailedAcquire`方法是在获取锁失败的情况下才能执行，因此进入该方法时，说明已经有线程获得锁了，并且在执行该方法时，当前节点之前的节点不会变化(因为只有当下一个节点获得锁的时候才会设置head)，所以这里可以更新prev，而且不必用CAS来更新。
+
+
+
+> Java特种兵
+> http://www.ideabuffer.cn/2017/03/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3AbstractQueuedSynchronizer%EF%BC%88%E4%B8%80%EF%BC%89/
 
