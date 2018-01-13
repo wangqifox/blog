@@ -329,3 +329,5 @@ private void doSignalAll(Node first) {
 与doSignal方法比较一下，doSignal方法只是唤醒了一个node并加入到Sync队列中，而doSignalAll方法方法唤醒了所有的Condition节点，并加入到Sync队列中。
 
 
+> http://www.ideabuffer.cn/2017/03/20/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3AbstractQueuedSynchronizer%EF%BC%88%E4%B8%89%EF%BC%89/
+
