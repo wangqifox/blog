@@ -131,9 +131,9 @@ final boolean isOnSyncQueue(Node node) {
 }
 ```
 
-`isOnSyncQueue`方法判断当前线程的node是否在Sync队列中：
+`isOnSyncQueue`方法判断当前线程的node是否在Sync队列中，即被唤醒加入到Sync队列中：
 
-1. 如果当前线程node的状态的CONDITION，或者node.prev为null时说明已经在Condition队列中了，所以返回false
+1. 如果当前线程node的状态的CONDITION，或者`node.prev`为null时说明已经在Condition队列中了，所以返回false
 2. 如果node.next不为null，说明在Sync队列中，返回true
 3. 如果两个if都未返回时，可以断定node的prev一定不为null，next一定为null，这个时候可以认为node正处于放入Sync队列的CAS操作的执行过程中。而这个CAS操作有可能失败，所以通过`findNodeFromTail`再尝试一次判断。
 
@@ -328,6 +328,7 @@ private void doSignalAll(Node first) {
 
 与doSignal方法比较一下，doSignal方法只是唤醒了一个node并加入到Sync队列中，而doSignalAll方法方法唤醒了所有的Condition节点，并加入到Sync队列中。
 
+Condition必须与一个独占锁绑定使用，在await或signal之前必须先持有独占锁。Condition队列时一个单向链表，它是公平的，按照先进先出的顺序从队列中被唤醒并添加到Sync队列中，这时便恢复了参与竞争锁的资格。
 
 > http://www.ideabuffer.cn/2017/03/20/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3AbstractQueuedSynchronizer%EF%BC%88%E4%B8%89%EF%BC%89/
 
