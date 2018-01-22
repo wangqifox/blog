@@ -2,7 +2,7 @@
 title: Spring与MVC(二)
 ---
 
-在上一篇文章[Spring与MVC(一)][1]中，我们配置了一个最基本的Web应用，这一章我们来看看这个最基本的Web应用是如何创建`DispatcherServlet`和`ContextLoaderListener`的。
+在上一篇文章[Spring与MVC(一)](/articles/Spring/Spring与MVC%28一%29.html)中，我们配置了一个最基本的Web应用，这一章我们来看看这个最基本的Web应用是如何创建`DispatcherServlet`和`ContextLoaderListener`的。
 <!-- more -->
 ## SpringServletContainerInitializer
 
@@ -135,7 +135,5 @@ protected WebApplicationContext createServletApplicationContext() {
 
 - 通过`super.onStartup(servletContext)`方法创建`ContextLoaderListener`。`getRootConfigClasses`方法返回的带有`@Configuration`注解的类将会用来配置`ContextLoaderListener`创建的应用上下文中的bean。
 - 通过`registerDispatcherServlet(servletContext)`方法创建`DispatcherServlet`。`getServletConfigClasses`方法返回的带有`@Configuration`注解的类将会用来配置`DispatcherServlet`应用上下文中的bean。
-
-[1]: /articles/Spring/Spring与MVC(一).html
 
 
