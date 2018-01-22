@@ -27,6 +27,8 @@ public void onStartup(ServletContext servletContext) throws ServletException {
 }
 ```
 
+### 创建ContextLoaderListener
+
 首先调用父类`AbstractContextLoaderInitializer`的`onStartup`方法：
 
 ```java
@@ -70,6 +72,8 @@ protected WebApplicationContext createRootApplicationContext() {
 回到`AbstractContextLoaderInitializer.registerContextLoaderListener`，创建一个`ContextLoaderListener`，将`createRootApplicationContext`返回的`AnnotationConfigWebApplicationContext`赋值给`ContextLoaderListener`的context中。
 
 将刚才创建的`ContextLoaderListener`添加到ServletContext中。
+
+### 创建DispatcherServlet
 
 回到`AbstractDispatcherServletInitializer.onStartup`，创建完`ContextLoaderListener`之后，调用`registerDispatcherServlet`注册`DispatcherServlet`：
 
@@ -125,7 +129,7 @@ protected WebApplicationContext createServletApplicationContext() {
 
 回到`AbstractDispatcherServletInitializer.registerDispatcherServlet`方法，调用`createDispatcherServlet`创建`DispatcherServlet`。
 
-将我们创建的`DispatcherServlet`添加到servletContext中。在`registration`中添加Servlet映射，映射由我们的`WebAppInitializer`配置类指定。
+将我们创建的`DispatcherServlet`添加到servletContext中。在`registration`中添加Servlet映射，Servlet映射由我们的`WebAppInitializer`配置类指定。
 
 获取过滤器，注册到servletContext中。
 
