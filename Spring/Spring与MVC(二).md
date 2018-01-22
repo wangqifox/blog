@@ -2,7 +2,7 @@
 title: Spring与MVC(二)
 ---
 
-在上一篇文章[Spring与MVC(一)]("/articles/Spring/Spring与MVC(一).html")中，我们配置了一个最基本的Web应用，这一章我们来看看这个最基本的Web应用是如何创建`DispatcherServlet`和`ContextLoaderListener`的。
+在上一篇文章[Spring与MVC(一)](https://blog.wangqi.love/articles/Spring/Spring%E4%B8%8EMVC(%E4%BA%8C).html)中，我们配置了一个最基本的Web应用，这一章我们来看看这个最基本的Web应用是如何创建`DispatcherServlet`和`ContextLoaderListener`的。
 <!-- more -->
 ## SpringServletContainerInitializer
 
