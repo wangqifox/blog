@@ -136,6 +136,6 @@ protected WebApplicationContext createServletApplicationContext() {
 - 通过`super.onStartup(servletContext)`方法创建`ContextLoaderListener`。`getRootConfigClasses`方法返回的带有`@Configuration`注解的类将会用来配置`ContextLoaderListener`创建的应用上下文中的bean。
 - 通过`registerDispatcherServlet(servletContext)`方法创建`DispatcherServlet`。`getServletConfigClasses`方法返回的带有`@Configuration`注解的类将会用来配置`DispatcherServlet`应用上下文中的bean。
 
-[1]: articles/Spring/Spring与MVC(一).html
+[1]: /articles/Spring/Spring与MVC(一).html
 
 
