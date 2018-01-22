@@ -17,7 +17,7 @@ DispatcherServlet的任务就是将请求发送给Spring MVC控制器(controller
 这样，控制器就不会与特定的视图相耦合，传递给DispatcherServlet的视图名并不直接表示某个特定的JSP。实际上，它甚至并不能确定视图就是JSP。相反，它仅仅传递了一个逻辑名称，这个名称将会用来查找产生结果的真正视图。DispatcherServlet将会使用视图解析器(view resolver)来讲逻辑视图名匹配为一个特定的视图实现，它可能是也可能不是JSP。
 
 既然DisPatcherServlet已经知道由哪个视图渲染结果，那请求的任务基本上也就完成了。它的最后一站是视图的实现(可能是JSP)，在这里它交付模型数据。请求的任务就完成了。视图将使用模型数据渲染输出，这个输出会通过响应对象传递给客户端。
-
+<!-- more -->
 ## 配置DispatcherServlet
 
 DispatcherServlet是Spring MVC的核心。在这里请求会第一次接触到框架，它要负责将请求路由到其他的组件之中：
