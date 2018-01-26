@@ -1,5 +1,6 @@
 ---
 title: Spring与MVC(五)
+date: 2018-01-25
 ---
 
 在上一篇文章[Spring与MVC(四)][1]中，我们分析了`DispatcherServlet`在处理请求时是如何找到正确的Controller，以及如何执行。在这篇文章中，我们来看分析一下Spring MVC是如何处理方法参数以及响应返回值的。
@@ -327,6 +328,45 @@ public void handleReturnValue(Object returnValue, MethodParameter returnType,
 
 返回到`DispatcherServlet.doDispatch`方法，获得`ModelAndView`对象，最后调用`processDispatchResult`渲染页面或者处理异常。
 
+## RequestResponseBodyMethodProcessor
+
+如果返回值带着`ResponseBody`注释，选择`RequestResponseBodyMethodProcessor`，我们来看一下它的返回值处理方法`handleReturnValue`：
+
+```java
+public void handleReturnValue(Object returnValue, MethodParameter returnType,
+		ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
+		throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
+
+	mavContainer.setRequestHandled(true);
+	ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
+	ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
+
+	// Try even with null return value. ResponseBodyAdvice could get involved.
+	writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
+}
+```
+
+`handleReturnValue`方法调用`AbstractMessageConverterMethodProcessor.writeWithMessageConverters`方法将返回值处理后输出。它的工作步骤如下：
+
+1. 调用`getAcceptableMediaTypes`方法来获取请求头的"ACCEPT"字段指定客户端能够接收的内容类型`requestedMediaTypes`
+2. 调用`getProducibleMedaiTypes`方法获取当前能够生成的内容类型`producibleMediaTypes`
+
+	`getProducibleMedaiTypes`遍历当前所有的messageConverters:
+	
+	1. ByteArrayHttpMessageConverter
+	2. StringHttpMessageConverter
+	3. ResourceHttpMessageConverter
+	4. SourceHttpMessageConverter
+	5. AllEncompassingFormHttpMessageConverter
+	6. Jaxb2RootElementHttpMessageConverter
+
+	调用`canWrite`方法判断返回的类是否可以由该`converter`来输出，如果可以输出的话添加该`converter`支持的`MediaType`。
+	
+3. 调用`isCompatibleWith`方法，从`requestedMediaTypes`和`producibleMediaTypes`中挑选兼容的类型
+4. 遍历`messageConverters`，调用`canWrite`方法选择合适的messageConverter
+5. 获取`RequestResponseBodyAdviceChain`，调用`beforeBodyWrite`对返回值进行处理
+6. 在返回头上加入"Content-Disposition"
+7. 调用messageConverter的`write`方法，在返回头上加入contentType。然后调用`writeInternal`方法，将转化过后的数据直接写到response中
 
 
 
