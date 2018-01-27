@@ -231,7 +231,9 @@ public static boolean isSimpleValueType(Class<?> clazz) {
 	}
 	```
 
-5. 调用dataBinder的`bind`方法填充对象中的数据
+	其中servletBinder为`ExtendedServletRequestDataBinder`
+
+	调用dataBinder的`bind`方法填充对象中的数据
 
 	```java
 	public void bind(ServletRequest request) {
@@ -248,6 +250,39 @@ public static boolean isSimpleValueType(Class<?> clazz) {
 	首先读取请求中所有参数以及参数对应的值生成`MutablePropertyValues`。然后调用`addBindValues`将请求路径中的参数与值合并到mpvs中。
 	
 	然后调用`doBind`将请求的参数绑定到对象上。
+
+5. 调用`validateIfApplicable`方法，判断生成的参数对象是否符合要求
+	
+### @RequestBody
+	
+如果参数带着`@RequestBody`注释，选择`RequestResponseBodyMethodProcessor`。来看一下它的`resolveArgument`方法是如何工作的：
+
+1. 调用`readWithMessageConverters`读取请求内容生成对应的参数对象
+
+	其中messageConverters有如下7个供选择：
+	
+	1. ByteArrayHttpMessageConverter
+	2. StringHttpMessageConverter
+	3. ResourceHttpMessageConverter
+	4. SourceHttpMessageConverter
+	5. AllEncompassingFormHttpMessageConverter
+	6. Jaxb2RootElementHttpMessageConverter
+	7. MappingJackson2HttpMessageConverter
+
+	**注意`MappingJackson2HttpMessageConverter`并不是默认有的，需要在配置文件中配置**
+	
+	通过调用messageConverter的`canRead`方法判断这个messageConverter是否可以读取请求生成对应的参数。
+	
+	找到合适的messageConverter之后执行三步操作：
+	
+	1. 调用`RequestBodyAdvice`的`beforeBodyRead`方法对请求进行处理。
+	2. 调用messageConverter的`read`方法，读取请求内容生成对应的参数对象
+	3. 调用`RequestBodyAdvice`的`afterBodyRead`方法对生成的参数对象进行处理
+
+	返回生成的参数对象
+	
+2. 创建`WebDataBinder`，具体的类是`ExtendedServletRequestDataBinder`
+3. 调用`validateIfApplicable`方法，判断生成的参数对象是否符合要求
 	
 ## 返回值的响应
 
