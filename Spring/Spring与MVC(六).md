@@ -7,7 +7,7 @@ date: 2018-01-27
 
 1. 程序在`DispatcherServlet.doDispatch`方法中调用`ha.handle`执行相应的函数，这时抛出异常，异常赋值给`dispatchException`。
 2. 调用`processDispatchResult`方法处理捕获的异常。
-
+<!-- more -->
 ## processHandlerException
 
 在`DispatcherServlet.processDispatchResult`方法的`processHandlerException`中调用`HandlerExceptionResolverComposite.resolveException`，遍历所有的异常处理器(实现`HandlerExceptionResolver`接口)，处理异常
@@ -73,29 +73,29 @@ if (exception != null) {
 
 来看`ExceptionHandlerExceptionResolver`
 
-![ExceptionHandlerExceptionResolve](media/ExceptionHandlerExceptionResolver-1.png)
+![ExceptionHandlerExceptionResolve](media/ExceptionHandlerExceptionResolver.png)
 
 
 它的`resolveException`方法在父类`AbstractHandlerExceptionResolver`中。它的主要工作是调用`doResolveException`处理异常并返回`ModelAndView`。`doResolveException`调用`doResolveHandlerMethodException`，`doResolveHandlerMethodException`在`ExceptionHandlerExceptionResolver`中实现：
 
 1. 首先调用`getExceptionHandlerMethod`获取异常处理的方法`exceptionHandlerMethod`
 
-	1. 先获取controller方法的类型
-	2. 根据controller方法的类型获取处理异常的方法，具体的过程在`ExceptionHandlerMethodResolver`类的构造函数中
+	- 先获取controller方法的类型
+	- 根据controller方法的类型获取处理异常的方法，具体的过程在`ExceptionHandlerMethodResolver`类的构造函数中
 
-		```java
-		public ExceptionHandlerMethodResolver(Class<?> handlerType) {
-			for (Method method : MethodIntrospector.selectMethods(handlerType, EXCEPTION_HANDLER_METHODS)) {
-				for (Class<? extends Throwable> exceptionType : detectExceptionMappings(method)) {
-					addExceptionMapping(exceptionType, method);
-				}
+	```java
+	public ExceptionHandlerMethodResolver(Class<?> handlerType) {
+		for (Method method : MethodIntrospector.selectMethods(handlerType, EXCEPTION_HANDLER_METHODS)) {
+			for (Class<? extends Throwable> exceptionType : detectExceptionMappings(method)) {
+				addExceptionMapping(exceptionType, method);
 			}
 		}
-		```
-		
-		在`MethodIntrospector.selectMethods`方法中获取所有controller方法对应的异常处理方法，调用`detectExceptionMappings`获取异常处理函数的处理的异常类型，然后将异常类型与异常处理方法的键值对添加到`ExceptionHandlerMethodResolver`的`mappedMethods`中。
-		
-	3. 调用`ExceptionHandlerMethodResolver.resolveMethod`方法根据异常获取异常处理方法
+	}
+	```
+
+	在`MethodIntrospector.selectMethods`方法中获取所有controller方法对应的异常处理方法，调用`detectExceptionMappings`获取异常处理函数的处理的异常类型，然后将异常类型与异常处理方法的键值对添加到`ExceptionHandlerMethodResolver`的`mappedMethods`中。
+
+	- 调用`ExceptionHandlerMethodResolver.resolveMethod`方法根据异常获取异常处理方法
 
 2. 调用`exceptionHandlerMethod`的`invokeAndHandle`方法执行异常处理方法
 
