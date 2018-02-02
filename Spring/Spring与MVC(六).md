@@ -8,6 +8,7 @@ date: 2018-01-27
 1. 程序在`DispatcherServlet.doDispatch`方法中调用`ha.handle`执行相应的函数，这时抛出异常，异常赋值给`dispatchException`。
 2. 调用`processDispatchResult`方法处理捕获的异常。
 <!-- more -->
+
 ## processHandlerException
 
 在`DispatcherServlet.processDispatchResult`方法的`processHandlerException`中调用`HandlerExceptionResolverComposite.resolveException`，遍历所有的异常处理器(实现`HandlerExceptionResolver`接口)，处理异常
