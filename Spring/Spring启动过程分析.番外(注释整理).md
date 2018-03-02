@@ -57,3 +57,7 @@ title: Spring启动过程分析.番外(注释整理)
 - initMethod：指定bean初始化时调用的方法
 - destroyMethod：指定bean关闭时调用的方法
 
+## @Required
+
+表示方法(通常是JavaBean的setter方法)是"必须的"。这意味着，setter方法必须被配置为依赖注入一个值
+

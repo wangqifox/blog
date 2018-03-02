@@ -40,7 +40,7 @@ public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environmen
 	Assert.notNull(environment, "Environment must not be null");
 	// 设置registry，本质上是annotationConfigApplicationContext实例
 	this.registry = registry;
-	// 新建conditionEvaluator
+	// 新建conditionEvaluator，用于处理Conditional注释
 	this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
 	/**
 	 * 注册AnnotationConfigProcessors，包括：
@@ -56,7 +56,14 @@ public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environmen
 }
 ```
 
-`AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry)`中调用`DefaultListableBeanFactory.registerBeanDefinition`来注册各种BeanPostProcessor的BeanDefinition
+`AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry)`中调用`DefaultListableBeanFactory.registerBeanDefinition`来注册各种BeanPostProcessor的BeanDefinition，包括：
+
+- ConfigurationClassPostProcessor
+- AutowireAnnotationBeanPostProcessor
+- RequireAnnotationBeanPostProcessor
+- CommonAnnotationBeanPostProcessor
+- EventListenerMethodProcessor
+- DefaultEventListenerFactory
 
 ### ClassPathBeanDefinitionScanner
 
@@ -74,10 +81,11 @@ public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean u
 		 * 隐含地注册包含@Component的注释，包括：@Repository, @Service, @Controller
 		 * 也支持@ManagedBean以及@Named注释
 		 * 保存在List<TypeFilter> includeFilters里
+		 * AnnotationTypeFilter
 		 */
 		registerDefaultFilters();
 	}
-	// 设置environment
+	// 设置environment，StandardEnvironment
 	setEnvironment(environment);
 	// 设置resourceLoader，本质上还是annotationConfigApplicationContext实例
 	setResourceLoader(resourceLoader);
@@ -88,7 +96,7 @@ public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean u
 
 注册初始配置文件使用了AnnotationConfigApplicationContext构造函数中初始化的AnnotatedBeanDefinitionReader。调用reader.register方法，最终调用的是`AnnotationConfigApplicationContext.registerBean(Class<?> annotatedClass, String name, Class<? extends Annotation>... qualifiers)`，主要步骤如下：
 
-1. 先将Class包装成AnnotatedGenericBeanDefinition 
+1. 先将Class包装成AnnotatedGenericBeanDefinition
 
 	`AnnotatedGenericBeanDefinition abd = AnnotatedGenericBeanDefinition(annotatedClass)`
 	
@@ -116,9 +124,12 @@ public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean u
 	
 ## 注册BeanDefinition
 
-注册BeanDefinition调用的是`DefaultListableBeanFactory.registerBeanDefinition`，该方法在后面的启动过程中还会经常使用。主要的功能是将bean的名称(beanName)和bean的定义(beanDefinition)放入beanDefinitionMap中:
+注册BeanDefinition调用的是`DefaultListableBeanFactory.registerBeanDefinition`，该方法在后面的启动过程中还会经常使用。主要的功能是将bean的名称(beanName)和bean的定义(beanDefinition)放入beanDefinitionMap中，将beanName放入beanDefinitionNames中:
 
-`this.beanDefinitionMap.put(beanName, beanDefinition)`
+```java
+this.beanDefinitionMap.put(beanName, beanDefinition)
+this.beanDefinitionNames.add(beanName)
+```
 
 ## Spring启动主流程
 

@@ -60,6 +60,7 @@ public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFacto
               	processedBeans.add(ppName);
         	}
       	}
+      	// priorityOrderedPostProcessors中保存的是ConfigurationClassPostProcessor
       	sortPostProcessors(beanFactory, priorityOrderedPostProcessors);
 		registryPostProcessors.addAll(priorityOrderedPostProcessors);
 		invokeBeanDefinitionRegistryPostProcessors(priorityOrderedPostProcessors, registry);
@@ -115,6 +116,7 @@ public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFacto
   
    /**
     * 获取beanFactory中的BeanFactoryPostProcessor
+    * 
     */
   	String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
   	

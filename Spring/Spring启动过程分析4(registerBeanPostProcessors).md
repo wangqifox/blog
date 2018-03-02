@@ -19,6 +19,7 @@ public static void registerBeanPostProcessors(
 		ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext) {
 	
 	// 获取beanFactory中所有BeanPostProcessor类的名称
+	// internalAutowiredAnnotationProcessor, internalRequiredAnnotationProcessor, internalCommonAnnotationProcessor, internalAutoProxyCreator
 	String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, true, false);
 
 	/**
@@ -29,6 +30,8 @@ public static void registerBeanPostProcessors(
 	beanFactory.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, beanProcessorTargetCount));
 
 	// 将BeanPostProcessors分为实现了PriorityOrdered接口、实现了Ordered接口、其他，三种类型
+	// priorityOrderedPostProcessors中有AutowiredAnnotationBeanPostProcessor, RequiredAnnotationBeanPostProcessor, CommonAnnotationBeanPostProcessor
+	// orderedPostProcessorNames中有AnnotationAwareAspectJAutoProxyCreator
 	List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<BeanPostProcessor>();
 	List<BeanPostProcessor> internalPostProcessors = new ArrayList<BeanPostProcessor>();
 	List<String> orderedPostProcessorNames = new ArrayList<String>();
@@ -49,9 +52,25 @@ public static void registerBeanPostProcessors(
 		}
 	}
 
-	// 注册实现了PriorityOrdered接口的BeanPostProcessors，当前主要有AutowiredAnnotationBeanPostProcessor、RequiredAnnotationBeanPostProcessor、CommonAnnotationBeanPostProcessor
+	/**
+	 * 注册实现了PriorityOrdered接口的BeanPostProcessors，
+	 * 当前主要有
+	 * AutowiredAnnotationBeanPostProcessor
+	 * RequiredAnnotationBeanPostProcessor
+	 * CommonAnnotationBeanPostProcessor
+	 */
 	sortPostProcessors(beanFactory, priorityOrderedPostProcessors);
-	// 注册到beanFactory中。添加到List<BeanPostProcessor> beanPostProcessors中
+	/** 
+	 * 注册到beanFactory中。添加到List<BeanPostProcessor> beanPostProcessors中。
+	 * 当前beanPostProcessors中有：
+	 * ApplicationContextAwareProcessor
+	 * ApplicationListenerDetector
+	 * ImportAwareBeanPostProcessor
+	 * BeanPostProcessorChecker
+	 * CommonAnnotationBeanPostProcessor
+	 * AutowiredAnnotationBeanPostProcessor
+	 * RequiredAnnotationBeanPostProcessor
+	 */
 	registerBeanPostProcessors(beanFactory, priorityOrderedPostProcessors);
 
 	// 注册实现了Ordered接口的BeanPostProcessors	List<BeanPostProcessor> orderedPostProcessors = new ArrayList<BeanPostProcessor>();
@@ -63,6 +82,18 @@ public static void registerBeanPostProcessors(
 		}
 	}
 	sortPostProcessors(beanFactory, orderedPostProcessors);
+	/** 
+	 * 注册到beanFactory中。添加到List<BeanPostProcessor> beanPostProcessors中。
+	 * 当前beanPostProcessors中有：
+	 * ApplicationContextAwareProcessor
+	 * ApplicationListenerDetector
+	 * ImportAwareBeanPostProcessor
+	 * BeanPostProcessorChecker
+	 * CommonAnnotationBeanPostProcessor
+	 * AutowiredAnnotationBeanPostProcessor
+	 * RequiredAnnotationBeanPostProcessor
+	 * AnnotationAwareAspectJAutoProxyCreator
+	 */
 	registerBeanPostProcessors(beanFactory, orderedPostProcessors);
 
 	// 注册其他的BeanPostProcessors
@@ -80,8 +111,7 @@ public static void registerBeanPostProcessors(
 	sortPostProcessors(beanFactory, internalPostProcessors);
 	registerBeanPostProcessors(beanFactory, internalPostProcessors);
 
-	// Re-register post-processor for detecting inner beans as ApplicationListeners,
-	// moving it to the end of the processor chain (for picking up proxies etc).
+	// 重新注册ApplicationListenerDetector，将ApplicationListenerDetector移到beanPostProcessors列表的末尾
 	beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(applicationContext));
 }
 ```

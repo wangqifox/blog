@@ -694,6 +694,23 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
 }
 ```
 
+- ApplicationContextAwareProcessor
+- ImportAwareBeanPostProcessor
+- BeanPostProcessorChecker
+- CommonAnnotationBeanPostProcessor
+    
+    支持`@PostConstruct`、`@PreDestroy`注释
+    
+- AutowiredAnnotationBeanPostProcessor
+
+    支持`@Autowired`、`@Value`注释
+
+- RequiredAnnotationBeanPostProcessor
+
+    支持`@Required`注释
+
+- ApplicationListenerDetector
+
 #### postProcessPropertyValues
 
 以AutowiredAnnotationBeanPostprocessor为例，它委托给InjectionMetadata对象来完成属性注入，`AutowiredAnnotationBeanPostprocessor.postProcessPropertyValues`：
@@ -888,6 +905,10 @@ protected Object initializeBean(final String beanName, final Object bean, RootBe
 }
 ```
 
+#### applyBeanPostProcessorBeforeInitialization
+
+调用beanPostProcessors中各个beanPostProcessor的postProcessBeforeInitialization方法
+
 #### 调用初始化方法
 
 初始化方法为`AbstractAutowireCapableBeanFactory.invokeInitMethods`：
@@ -996,5 +1017,9 @@ protected void invokeCustomInitMethod(String beanName, final Object bean, RootBe
 	}
 }
 ```
+
+##### applyBeanPostProcessorsAfterInitialization
+
+调用beanPostProcessors中各个beanPostProcessor的postProcessAfterInitialization方法
 
 

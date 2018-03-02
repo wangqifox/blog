@@ -10,7 +10,7 @@ title: Spring启动过程分析2(prepareBeanFactory)
 protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 	// 设置classLoader(用于加载bean)
 	beanFactory.setBeanClassLoader(getClassLoader());
-	// 设置表达式解析器(解析bean定义中的一些表达式)
+	// 设置表达式解析器StandardBeanExpressionResolver(解析bean定义中的一些表达式)
 	beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 	// 添加属性编辑注册器(注册属性编辑器)
 	beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegister(this, getEnvironment()));
@@ -29,6 +29,9 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 	 * 因为ApplicatioinContextAwareProcessor把这6这个接口的实现工作做了
 	 * 
 	 * 保存在beanFactory的ignoredDependencyInterfaces集合中
+	 * 
+	 * ApplicatioinContextAwareProcessor的作用在于为实现*Aware接口的bean调用该Aware接口定义的方法，并传入对应的参数。
+	 * 比如实现EnvironmentAware接口的bean在该Processor内部会调用EnvironmentAware接口的setEnvironment方法，并把Spring容器内部的ConfigurationEnvironment传递进去。
 	 */
 	beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 	beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -49,7 +52,7 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 	beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
 	beanFactory.registerResolvableDependency(ApplicationContext.class, this);
 	
-	// 注册ApplicationListenerDetector
+	// 注册ApplicationListenerDetector，用于发现实现了ApplicationListener接口的bean
 	beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 	
 	// 检查代码织入
@@ -73,6 +76,8 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 	}
 }
 ```
+
+beanPostProcessors中当前有`ApplicationContextAwareProcessor`、`ApplicationListenerDetector`两个beanPostProcessor
 
 `beanFactory.addBeanPostProcessor`做的工作是增加BeanPostProcessor。在AbstractBeanFactory的`List<BeanPostProcessor> beanPostProcessors`中加入BeanPostProcessor。
 
