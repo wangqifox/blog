@@ -20,6 +20,7 @@ public static ConfigurableApplicationContext run(Object[] sources, String[] args
 	return new SpringApplication(sources).run(args);
 }
 ```
+<!-- more -->
 ## 初始化SpringApplication
 
 SpringApplication的构造函数中调用了`initialize`方法来初始化SpringApplication：
