@@ -1,5 +1,6 @@
 ---
 title: ReentrantLock与AbstractQueuedSynchronizer
+date: 2018/01/10 10:41:25
 ---
 
 AbstractQueuedSynchronizer(AQS)是许多Java并发控制类的基础，比如ReentrantLock、Semaphone、CountDownLatch等都是基于AQS来完成的，因此了解AQS的基本原理是了解Java并发控制类的基础。

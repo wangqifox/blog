@@ -1,5 +1,6 @@
 ---
 title: Semaphone与AbstractQueuedSynchronizer
+date: 2018/01/11 09:10:25
 ---
 
 Semaphone也是一个类似锁的组件，它管理的是多个资源的分配，实现的是AbstractQueuedSynchronizer抽象类，有了前面`ReentrantLock与AbstractQueuedSynchronizer`的铺垫，Semaphone的分析变得无比轻松。

@@ -1,5 +1,6 @@
 ---
 title: Condition与AbstractQueuedSynchronizer
+date: 2018/01/12 15:38:25
 ---
 
 前两篇文章中分析了AQS的独占功能和共享功能，AQS中还实现了Condition的功能。它可以替代传统的Object中的wait()、notify()、notifyAll()方法来实现线程间的通信，使线程间协作更加安全和高效。

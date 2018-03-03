@@ -1,5 +1,6 @@
 ---
 title: SpringBoot如何优雅的将静态资源配置注入到工具类中
+date: 2017/12/23 14:06:25
 ---
 
 资源注入类:
@@ -45,3 +46,4 @@ public class QCloudFileUtils {
 ```
 
 > https://my.oschina.net/vright/blog/826184
+

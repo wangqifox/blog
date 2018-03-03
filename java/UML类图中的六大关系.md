@@ -1,5 +1,6 @@
 ---
 title: UML类图中的六大关系：关联、聚合、组合、依赖、继承、实现
+date: 2017/12/14 09:24:00
 ---
 
 ## 简介
@@ -154,3 +155,4 @@ public final class String implements java.io.Serializable, Comparable<String>, C
 引用：
 
 > https://my.oschina.net/jackieyeah/blog/224265
+
