@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析6(finishRefresh)
+date: 2018/01/02 19:58:00
 ---
 
 finishRefresh方法调用LifecycleProcessor的onRefresh()方法，发送ContextRefreshedEvent

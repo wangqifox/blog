@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析.番外(ConfigurationClassPostProcessor)
+date: 2018/01/05 17:19:00
 ---
 
 `ConfigurationClassPostProcessor`是一个用于处理配置类的处理器，它在Spring启动过程中在`invokeBeanFactoryPostProcessors`方法中被调用：

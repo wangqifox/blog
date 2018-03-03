@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析4(registerBeanPostProcessors)
+date: 2017/12/29 08:42:00
 ---
 
 从Spring容器中找出实现了BeanPostProcessor接口的bean，并设置到BeanFactory的属性中。之后bean被实例化的时候会调用这个BeanPostProcessor。

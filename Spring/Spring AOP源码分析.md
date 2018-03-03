@@ -1,5 +1,6 @@
 ---
 title: Spring AOP源码分析
+date: 2018/01/16 18:16:00
 ---
 
 在`invokeBeanFactoryPostProcessors`中注册beanDefinition

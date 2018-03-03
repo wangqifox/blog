@@ -1,5 +1,6 @@
 ---
 title: Spring与MVC(二)
+date: 2018/01/22 15:36:00
 ---
 
 在上一篇文章[Spring与MVC(一)][1]中，我们配置了一个最基本的Web应用，这一章我们来看看这个最基本的Web应用是如何创建`DispatcherServlet`和`ContextLoaderListener`的。

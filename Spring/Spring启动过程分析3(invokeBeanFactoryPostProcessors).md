@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析3(invokeBeanFactoryPostProcessors)
+date: 2017/12/28 13:41:00
 ---
 
 在Spring容器中找出实现了BeanDefinitionRegistryPostProcessor以及BeanFactoryPostProcessor接口的processor并执行。Spring容器会委托给PostProcessorRegistrationDelegate的invokeBeanFactoryProcessors方法执行。

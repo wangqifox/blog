@@ -1,5 +1,6 @@
 ---
 title: Spring与事务(一)
+date: 2018/01/18 17:26:00
 ---
 
 上回说到，直接使用JDBC操作数据库增删改查是非常繁琐的，因此Spring提供了模板类(`JdbcTemplate`, `NamedParameterJdbcTemplate`)来简化我们和数据库的交互。同样的，直接使用JDBC进行事务的关系也需要写很多非业务代码，Spring提供了一个接口来完成事务的提交和回滚等功能，即接口`PlatformTransactionManager`，如果是使用jdbc则使用`DataSourceTransactionManager`来完成事务的提交和回滚，如果是使用hibernate则使用HibernateTransactionManager来完成事务的提交和回滚。

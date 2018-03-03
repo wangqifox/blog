@@ -1,5 +1,6 @@
 ---
 title: Spring与事务(二)
+date: 2018/01/19 10:04:00
 ---
 
 上回说到，使用事务的模板`TransactionTemplate`可以极大地减少我们使用事务时的工作，我们只需将我们的业务逻辑写到`TransactionCallback`接口方法中即可。

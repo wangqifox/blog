@@ -1,5 +1,6 @@
 ---
 title: Spring与MVC(三)
+date: 2018/01/22 20:42:00
 ---
 
 在上一篇文章[Spring与MVC(二)][1]中，我们分析了Spring MVC在启动过程中`ContextLoaderListener`和`DispatcherServlet`两个类的创建过程。

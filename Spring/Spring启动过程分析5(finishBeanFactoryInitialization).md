@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析5(finishBeanFactoryInitialization)
+date: 2018/01/02 15:15:00
 ---
 
 实例化BeanFactory中已经被注册但是未实例化的所有实例(懒加载的不需要实例化)。比如invokeBeanFactoryPostProcessors方法中根据各种注解解析出来的类，在这个时候都会被初始化。实例化的过程各种BeanPostProcessor开始起作用。

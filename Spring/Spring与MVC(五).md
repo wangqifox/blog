@@ -1,6 +1,6 @@
 ---
 title: Spring与MVC(五)
-date: 2018-01-25
+date: 2018/01/24 18:47:00
 ---
 
 在上一篇文章[Spring与MVC(四)][1]中，我们分析了`DispatcherServlet`在处理请求时是如何找到正确的Controller，以及如何执行。在这篇文章中，我们来看分析一下Spring MVC是如何处理方法参数以及响应返回值的。

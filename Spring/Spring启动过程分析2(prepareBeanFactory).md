@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析2(prepareBeanFactory)
+date: 2017/12/28 13:26:00
 ---
 
 `prepareBeanFactory`方法在`AbstractApplicationContext.refresh`流程中。对前面获取到的beanFactory(ConfigurationListableBeanFactory)进行相关的设置，包括ClassLoader, post-processors，为后续的使用做准备。
