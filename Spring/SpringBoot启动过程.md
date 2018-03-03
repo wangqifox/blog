@@ -48,7 +48,7 @@ private void initialize(Object[] sources) {
 	
 	这两个类来判断，如果能获得这两个类则说明是web应用，否则不是。
 	
-2. 调用`getSpringFactoriesInstances`从spring.factories文件中找出key为ApplicationContextInitializer的类并实例化，然后调用`setInitializers`方法设置到`SpringApplication`的`initializers`属性中。这个过程就是找出所有的应用程序初始化器
+2. 调用`getSpringFactoriesInstances`从spring.factories文件中找出key为ApplicationContextInitializer的类并实例化，然后调用`setInitializers`方法设置到`SpringApplication`的`initializers`属性中。这个过程就是找出所有的应用程序初始化器。[获取初始化器](#id1)
     
     当前的初始化器有如下几个:
     
@@ -296,4 +296,8 @@ private void callRunners(ApplicationContext context, ApplicationArguments args) 
 }
 ```
 
+
+## 一些细节
+
+### <span id="id1"/>获取初始化器
 
