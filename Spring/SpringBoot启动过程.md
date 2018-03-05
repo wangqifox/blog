@@ -48,7 +48,7 @@ private void initialize(Object[] sources) {
 	
 	这两个类来判断，如果能获得这两个类则说明是web应用，否则不是。
 	
-2. 调用`getSpringFactoriesInstances`从spring.factories文件中找出key为ApplicationContextInitializer的类并实例化，然后调用`setInitializers`方法设置到`SpringApplication`的`initializers`属性中。这个过程就是找出所有的应用程序初始化器。[获取初始化器](#id1)
+2. 调用`getSpringFactoriesInstances`从spring.factories文件中找出key为ApplicationContextInitializer的类并实例化，然后调用`setInitializers`方法设置到`SpringApplication`的`initializers`属性中。这个过程就是找出所有的应用程序初始化器。细节详见:[获取初始化器](#id1)
     
     当前的初始化器有如下几个:
     
@@ -61,7 +61,7 @@ private void initialize(Object[] sources) {
     AutoConfigurationReportLoggingInitializer
     ```
 
-3. 调用`getSpringFactoriesInstances`从spring.factories文件中找出key为ApplicationListener的类并实例化，然后调用`setListeners`方法设置到`SpringApplication`的`listeners`属性中。这个过程就是找出所有的应用程序事件监听器
+3. 调用`getSpringFactoriesInstances`从spring.factories文件中找出key为ApplicationListener的类并实例化，然后调用`setListeners`方法设置到`SpringApplication`的`listeners`属性中。这个过程就是找出所有的应用程序事件监听器。细节详见:[获取监听器](#id2)
 
     当前的事件监听器有如下几个：
     
@@ -94,7 +94,7 @@ SpringApplicationRunListener用于监听SpringApplication的run方法的执行�
 4. contextLoaded：ApplicationContext创建并加载之后并在refresh之前调用，对应的事件类型是ApplicationPreparedEvent
 5. finished：run方法结束之前调用，对应事件的类型是ApplicationReadyEvent或ApplicationFailedEvent
 
-SpringApplicationRunListener目前只有一个实现类EventPublishingRunListener，它把监听的过程封装成了SpringApplicationEvent事件并让内部属性ApplicationEventMulticaster接口的实现类SimpleApplicationEventMulticaster广播出去，广播出去的事件对象会被SpringApplication中的listeners属性进行处理。
+SpringApplicationRunListener目前只有一个实现类EventPublishingRunListener，详见[获取SpringApplicationRunListeners](#id3)。它把监听的过程封装成了SpringApplicationEvent事件并让内部属性ApplicationEventMulticaster接口的实现类SimpleApplicationEventMulticaster广播出去，广播出去的事件对象会被SpringApplication中的listeners属性进行处理。
 
 所以说SpringApplicationRunListener和ApplicationListener之间的关系是通过ApplicationEventMulticaster广播出去的SpringApplicationEvent所联系起来的。
 
@@ -300,4 +300,235 @@ private void callRunners(ApplicationContext context, ApplicationArguments args) 
 ## 一些细节
 
 ### <span id="id1"/>获取初始化器
+
+初始化器的获取由`SpringApplication.getSpringFactoriesInstances`方法完成：
+
+```java
+private <T> Collection<? extends T> getSpringFactoriesInstances(Class<T> type,
+		Class<?>[] parameterTypes, Object... args) {
+	ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+	// Use names and ensure unique to protect against duplicates
+	// 读取ApplicationContextInitializer的实现类
+	Set<String> names = new LinkedHashSet<String>(SpringFactoriesLoader.loadFactoryNames(type, classLoader));
+	// 实例化ApplicationContextInitializer的实现类
+	List<T> instances = createSpringFactoriesInstances(type, parameterTypes, classLoader, args, names);
+	AnnotationAwareOrderComparator.sort(instances);
+	return instances;
+}
+```
+
+`SpringFactoriesLoader.loadFactoryNames`方法获取`ApplicationContextInitializer`接口实现的类：
+
+```java
+public static List<String> loadFactoryNames(Class<?> factoryClass, ClassLoader classLoader) {
+	// 获取接口类的名称
+	String factoryClassName = factoryClass.getName();
+	try {
+		// 获取FACTORIES_RESOURCE_LOCATION(META-INF/spring.factories)的多个位置
+		Enumeration<URL> urls = (classLoader != null ? classLoader.getResources(FACTORIES_RESOURCE_LOCATION) :
+				ClassLoader.getSystemResources(FACTORIES_RESOURCE_LOCATION));
+		List<String> result = new ArrayList<String>();
+		/**
+		 * urls有
+		 * spring-boot/META-INF/spring.factories
+		 * spring-beans/META-INF/spring.factories
+		 * spring-boot-autoconfigure/META-INF/spring.factories
+		 * 
+		 */
+		while (urls.hasMoreElements()) {
+			URL url = urls.nextElement();
+			// 从META-INF/spring.factories文件中加载配置
+			Properties properties = PropertiesLoaderUtils.loadProperties(new UrlResource(url));
+			// 从配置中读取ApplicationContextInitializer的实现类
+			String factoryClassNames = properties.getProperty(factoryClassName);
+			result.addAll(Arrays.asList(StringUtils.commaDelimitedListToStringArray(factoryClassNames)));
+		}
+		return result;
+	}
+	catch (IOException ex) {
+		throw new IllegalArgumentException("Unable to load [" + factoryClass.getName() +
+				"] factories from location [" + FACTORIES_RESOURCE_LOCATION + "]", ex);
+	}
+}
+```
+
+
+### <span id="id2"/>获取监听器
+
+获取监听器的方法与获取初始化器的方法一致，唯一的区别在于获取`org.springframework.context.ApplicationListener`接口的实现类
+
+### <span id="id3"/>获取SpringApplicationRunListeners
+
+首先看`getRunListeners`方法：
+
+```java
+private SpringApplicationRunListeners getRunListeners(String[] args) {
+	Class<?>[] types = new Class<?>[] { SpringApplication.class, String[].class };
+	return new SpringApplicationRunListeners(logger, getSpringFactoriesInstances(
+			SpringApplicationRunListener.class, types, this, args));
+}
+```
+
+可以看到通过调用构造函数来实例化`SpringApplicationRunListeners`，传入的参数有logger以及调用`getSpringFactoriesInstance`获得的`SpringApplicationRunListener`集合。
+
+再看`getSpringFactoriesInstance`方法，它和获取初始化器的方法一样，获取的接口类型是`org.springframework.boot.SpringApplicationRunListener`。获取到的实现类为`org.springframework.boot.context.event.EventPublishRunListener`。
+
+### SpringApplicationRunListeners的工作原理
+
+以启动过程中的`listeners.starting()`方法为例：
+
+```java
+public void starting() {
+	for (SpringApplicationRunListener listener : this.listeners) {
+		listener.starting();
+	}
+}
+```
+
+`this.listeners`中只有一个元素：`EventPublishingRunListener`。它的`starting`方法如下：
+
+```java
+public void starting() {
+	this.initialMulticaster
+			.multicastEvent(new ApplicationStartedEvent(this.application, this.args));
+}
+```
+
+其中`this.initialMulticaster`是`SimpleApplicationEventMulticaster`的实例。`multicastEvent`方法如下：
+
+```java
+public void multicastEvent(ApplicationEvent event) {
+	multicastEvent(event, resolveDefaultEventType(event));
+}
+
+public void multicastEvent(final ApplicationEvent event, ResolvableType eventType) {
+	ResolvableType type = (eventType != null ? eventType : resolveDefaultEventType(event));
+	for (final ApplicationListener<?> listener : getApplicationListeners(event, type)) {
+		Executor executor = getTaskExecutor();
+		if (executor != null) {
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					invokeListener(listener, event);
+				}
+			});
+		}
+		else {
+			invokeListener(listener, event);
+		}
+	}
+}
+```
+
+首先调用`getApplicationListeners`方法，根据event的type获得`ApplicationListener`列表，其中type为`ApplicationStartedEvent`。`getApplicationListeners`方法中调用`retrieveApplicationListeners`获取支持eventType的listener:
+
+```java
+private Collection<ApplicationListener<?>> retrieveApplicationListeners(
+		ResolvableType eventType, Class<?> sourceType, ListenerRetriever retriever) {
+
+	LinkedList<ApplicationListener<?>> allListeners = new LinkedList<ApplicationListener<?>>();
+	Set<ApplicationListener<?>> listeners;
+	Set<String> listenerBeans;
+	synchronized (this.retrievalMutex) {
+		// 获取所有的listener
+		listeners = new LinkedHashSet<ApplicationListener<?>>(this.defaultRetriever.applicationListeners);
+		listenerBeans = new LinkedHashSet<String>(this.defaultRetriever.applicationListenerBeans);
+	}
+	// 遍历listeners，调用supportsEvent判断listener是否支持eventType
+	for (ApplicationListener<?> listener : listeners) {
+		if (supportsEvent(listener, eventType, sourceType)) {
+			if (retriever != null) {
+				retriever.applicationListeners.add(listener);
+			}
+			allListeners.add(listener);
+		}
+	}
+	// 遍历listenerBeans，调用supportsEvent判断listener是否支持eventType
+	if (!listenerBeans.isEmpty()) {
+		BeanFactory beanFactory = getBeanFactory();
+		for (String listenerBeanName : listenerBeans) {
+			try {
+				Class<?> listenerType = beanFactory.getType(listenerBeanName);
+				if (listenerType == null || supportsEvent(listenerType, eventType)) {
+					ApplicationListener<?> listener =
+							beanFactory.getBean(listenerBeanName, ApplicationListener.class);
+					if (!allListeners.contains(listener) && supportsEvent(listener, eventType, sourceType)) {
+						if (retriever != null) {
+							retriever.applicationListenerBeans.add(listenerBeanName);
+						}
+						allListeners.add(listener);
+					}
+				}
+			}
+			catch (NoSuchBeanDefinitionException ex) {
+				// Singleton listener instance (without backing bean definition) disappeared -
+				// probably in the middle of the destruction phase
+			}
+		}
+	}
+	AnnotationAwareOrderComparator.sort(allListeners);
+	return allListeners;
+}
+```
+
+`ApplicationStartedEvent`事件返回的是4个listener：
+
+- LoggingApplicationListener
+- BackgroundPreinitializer
+- DelegatingApplicationListener
+- LiquibaseServiceLocatorApplicationListener
+
+回到`multicastEvent`方法，调用`getTaskExecutor`获取executor。executor为空，调用`invokeListener`：
+
+```java
+protected void invokeListener(ApplicationListener<?> listener, ApplicationEvent event) {
+	ErrorHandler errorHandler = getErrorHandler();
+	if (errorHandler != null) {
+		try {
+			doInvokeListener(listener, event);
+		}
+		catch (Throwable err) {
+			errorHandler.handleError(err);
+		}
+	}
+	else {
+		doInvokeListener(listener, event);
+	}
+}
+```
+
+获取errorHandler，errorHandler为空，调用`doInvokeListener`方法：
+
+```java
+private void doInvokeListener(ApplicationListener listener, ApplicationEvent event) {
+	try {
+		listener.onApplicationEvent(event);
+	}
+	catch (ClassCastException ex) {
+		String msg = ex.getMessage();
+		if (msg == null || msg.startsWith(event.getClass().getName())) {
+			// Possibly a lambda-defined listener which we could not resolve the generic event type for
+			Log logger = LogFactory.getLog(getClass());
+			if (logger.isDebugEnabled()) {
+				logger.debug("Non-matching event type for listener: " + listener, ex);
+			}
+		}
+		else {
+			throw ex;
+		}
+	}
+}
+```
+
+可以看到，`doInvokeListener`方法直接调用了listener的`onApplicationEvent`方法。
+
+
+
+
+
+
+
+
+
+
 
