@@ -45,7 +45,7 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 	 * 设置特殊类型对应的bean。
 	 * beanFactory对应刚刚获取的BeanFactory
 	 * ResourceLoader, ApplicationEventPublisher, ApplicationContext这3个接口对应的bean都设置为当前的Spring容器
-	 * 的
+	 * 
 	 * 保存在beanFactory的resolvableDependencies(ConcurrentHashMap)中
 	 */
 	beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
