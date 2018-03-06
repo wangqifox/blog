@@ -268,6 +268,8 @@ protected void applyInitializers(ConfigurableApplicationContext context) {
 }
 ```
 
+首先调用`getInitializers`方法获取之前取得的初始化器。之后调用初始化器的`initialize`方法。
+
 #### Spring容器创建完成之后会调用afterRefresh方法：
 
 ```java
@@ -521,14 +523,5 @@ private void doInvokeListener(ApplicationListener listener, ApplicationEvent eve
 ```
 
 可以看到，`doInvokeListener`方法直接调用了listener的`onApplicationEvent`方法。
-
-
-
-
-
-
-
-
-
 
 
