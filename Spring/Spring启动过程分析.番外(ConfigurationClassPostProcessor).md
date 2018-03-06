@@ -1,5 +1,6 @@
 ---
 title: Spring启动过程分析.番外(ConfigurationClassPostProcessor)
+subtitle: ConfigurationClassPostProcessor的处理过程
 date: 2018/01/05 17:19:00
 ---
 
