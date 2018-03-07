@@ -74,6 +74,13 @@ if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSO
 
 最后再注册一个`ApplicationListenerDetector`到beanFactory中，由于`ApplicationListenerDetector`已经存在于beanFactory的`beanPostProcessors`列表中，所以这里是先将原来的`ApplicationListenerDetector`删除然后在`beanPostProcessors`列表的末尾加入新的`ApplicationListenerDetector`。
 
-`registerBeanPostProcessors`方法执行完成之后，beanFactory的`beanPostProcessors`列表中总共有7个`BeanPostProcessor`。
+`registerBeanPostProcessors`方法执行完成之后，beanFactory的`beanPostProcessors`列表中总共有7个`BeanPostProcessor`：
 
+- `ApplicationContextAwareProcessor`
+- `ConfigurationClassPostProcessor.ImportAwareBeanPostProcessor`
+- `PostProcessorRegistrationDelegate.BeanPostProcessorChecker`
+- `CommonAnnotationBeanPostProcessor`
+- `AutowiredAnnotationBeanPostProcessor`
+- `RequiredAnnotationBeanPostProcessor`
+- `ApplicationListenerDetector`
 
