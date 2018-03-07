@@ -4,7 +4,7 @@ date: 2018/03/07 15:46:00
 ---
 
 今天复习Spring启动过程的时候，当分析`invokeBeanFactoryPostProcessors`方法的时候，发现自己对`BeanFactoryPostProcessor`和`BeanDefinitionRegistryPostProcessor`这两个接口还是有点一知半解，现在单独开一章来单独分析这两个接口。
-
+<!-- more -->
 先来看一下这两个接口定义的翻译：
 
 BeanFactoryPostProcessor：
