@@ -8,7 +8,7 @@ ResolvableType是Spring4提供的新的特性。它封装了Java类型，提供�
 在jdk中，Type接口代表一种类型，所有的具体类型都需要实现这个接口。
 
 ![Type](media/Type.png)
-
+<!-- more -->
 从上图可以看出，Java语法中的类型可以分为5大类：
 
 - 组件类型为参数化类型或类型变量的数组
