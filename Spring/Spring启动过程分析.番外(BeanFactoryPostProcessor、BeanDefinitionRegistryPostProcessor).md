@@ -71,6 +71,20 @@ if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAM
 
 到此为止，`BeanDefinitionRegistryPostProcessor`的工作完成了，此时所有的beanDefinition已经被加载。
 
+总结一下，到目前为止，beanDefinition的映射表为：
+
+- `org.springframework.context.annotation.internalConfigurationAnnotationProcessor` -> `org.springframework.context.annotation.ConfigurationClassPostProcessor`
+- `org.springframework.context.event.internalEventListenerFactory` -> `org.springframework.context.event.DefaultEventListenerFactory`
+- `org.springframework.context.event.internalEventListenerProcessor` -> `org.springframework.context.event.EventListenerMethodProcessor`
+- `org.springframework.context.annotation.internalAutowiredAnnotationProcessor` -> `org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor`
+- `org.springframework.context.annotation.internalCommonAnnotationProcessor` -> `org.springframework.context.annotation.CommonAnnotationBeanPostProcessor`
+- `org.springframework.context.annotation.internalRequiredAnnotationProcessor` -> `org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor`
+- `config` -> `EnhancerBySpringCGLIB`
+
+其中前6个beanDefinition是在`AnnotationConfigApplicationContext`构造过程中由`AnnotationConfigUtils.registerAnnotationConfigProcessors`方法加入的。
+
+`config`是Spring中我们的配置类，经过`ConfigurationClassPostProcessor`的`postProcessBeanFactory`方法的处理，包装了一个增强类。
+
 ### BeanFactoryPostProcessor
 
 由于`BeanDefinitionRegistryPostProcessor`继承了`BeanFactoryPostProcessor`，因此需要调用`ConfigurationClassPostProcessor`的`postProcessBeanFactory`方法。该方法中使用`ConfigurationClassEnhancer`来增强配置类，以及增加一个`BeanPostProcessor`：`ImportAwareBeanPostProcessor`。
