@@ -4,7 +4,7 @@ date: 2018/03/14 08:40:00
 ---
 
 Bean的示例化在Spring的启动过程中基本上算是最后的步骤。经过了前面`BeanDefinitionRegistryPostProcesser`和`BeanFactoryPostProcessor`注册BeanDefintion，`registerBeanPostProcessors`方法注册`BeanPostProcessor`。到了最后实例化的过程。
-
+<!-- more -->
 实例化的过程经过一下几层调用：
 `AbstractApplicationContext.finishBeanFactoryInitialization` -> `DefaultListableBeanFactory.preInstantiateSingletons` -> 
 `AbstractBeanFactory.getBean` ->
