@@ -6,7 +6,7 @@ date: 2018/04/01 09:48:00
 ThreadLocal的作用是提供线程内的局部变量，这种变量在线程的生命周期内起作用，减少同一个线程内多个函数或者组件之间一些公共变量的传递的复杂度。
 
 每个Thread的内部保存了一个类型为ThreadLocalMap的变量threadLocals。ThreadLocalMap是一个在ThreadLocal中实现的hashmap，Key是ThreadLocal，Value是保存的对象。
-
+<!-- more -->
 ## get()
 
 ```java
