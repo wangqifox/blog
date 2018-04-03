@@ -32,66 +32,66 @@ date: 2018/01/19 10:04:00
 
 ```java
 private void processImports(ConfigurationClass configClass, SourceClass currentSourceClass,
-		Collection<SourceClass> importCandidates, boolean checkForCircularImports) throws IOException {
+        Collection<SourceClass> importCandidates, boolean checkForCircularImports) throws IOException {
 
-	if (importCandidates.isEmpty()) {
-		return;
-	}
+    if (importCandidates.isEmpty()) {
+        return;
+    }
 
-	if (checkForCircularImports && isChainedImportOnStack(configClass)) {
-		this.problemReporter.error(new CircularImportProblem(configClass, this.importStack));
-	}
-	else {
-		this.importStack.push(configClass);
-		try {
-			for (SourceClass candidate : importCandidates) {
-				if (candidate.isAssignable(ImportSelector.class)) {
-					// Candidate class is an ImportSelector -> delegate to it to determine imports
-					Class<?> candidateClass = candidate.loadClass();
-					ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
-					ParserStrategyUtils.invokeAwareMethods(
-							selector, this.environment, this.resourceLoader, this.registry);
-					if (this.deferredImportSelectors != null && selector instanceof DeferredImportSelector) {
-						this.deferredImportSelectors.add(
-								new DeferredImportSelectorHolder(configClass, (DeferredImportSelector) selector));
-					}
-					else {
-						String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
-						Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames);
-						processImports(configClass, currentSourceClass, importSourceClasses, false);
-					}
-				}
-				else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
-					// Candidate class is an ImportBeanDefinitionRegistrar ->
-					// delegate to it to register additional bean definitions
-					Class<?> candidateClass = candidate.loadClass();
-					ImportBeanDefinitionRegistrar registrar =
-							BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
-					ParserStrategyUtils.invokeAwareMethods(
-							registrar, this.environment, this.resourceLoader, this.registry);
-					configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
-				}
-				else {
-					// Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar ->
-					// process it as an @Configuration class
-					this.importStack.registerImport(
-							currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
-					processConfigurationClass(candidate.asConfigClass(configClass));
-				}
-			}
-		}
-		catch (BeanDefinitionStoreException ex) {
-			throw ex;
-		}
-		catch (Throwable ex) {
-			throw new BeanDefinitionStoreException(
-					"Failed to process import candidates for configuration class [" +
-					configClass.getMetadata().getClassName() + "]", ex);
-		}
-		finally {
-			this.importStack.pop();
-		}
-	}
+    if (checkForCircularImports && isChainedImportOnStack(configClass)) {
+        this.problemReporter.error(new CircularImportProblem(configClass, this.importStack));
+    }
+    else {
+        this.importStack.push(configClass);
+        try {
+            for (SourceClass candidate : importCandidates) {
+                if (candidate.isAssignable(ImportSelector.class)) {
+                    // Candidate class is an ImportSelector -> delegate to it to determine imports
+                    Class<?> candidateClass = candidate.loadClass();
+                    ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
+                    ParserStrategyUtils.invokeAwareMethods(
+                            selector, this.environment, this.resourceLoader, this.registry);
+                    if (this.deferredImportSelectors != null && selector instanceof DeferredImportSelector) {
+                        this.deferredImportSelectors.add(
+                                new DeferredImportSelectorHolder(configClass, (DeferredImportSelector) selector));
+                    }
+                    else {
+                        String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
+                        Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames);
+                        processImports(configClass, currentSourceClass, importSourceClasses, false);
+                    }
+                }
+                else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
+                    // Candidate class is an ImportBeanDefinitionRegistrar ->
+                    // delegate to it to register additional bean definitions
+                    Class<?> candidateClass = candidate.loadClass();
+                    ImportBeanDefinitionRegistrar registrar =
+                            BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
+                    ParserStrategyUtils.invokeAwareMethods(
+                            registrar, this.environment, this.resourceLoader, this.registry);
+                    configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
+                }
+                else {
+                    // Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar ->
+                    // process it as an @Configuration class
+                    this.importStack.registerImport(
+                            currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
+                    processConfigurationClass(candidate.asConfigClass(configClass));
+                }
+            }
+        }
+        catch (BeanDefinitionStoreException ex) {
+            throw ex;
+        }
+        catch (Throwable ex) {
+            throw new BeanDefinitionStoreException(
+                    "Failed to process import candidates for configuration class [" +
+                    configClass.getMetadata().getClassName() + "]", ex);
+        }
+        finally {
+            this.importStack.pop();
+        }
+    }
 }
 ```
 
@@ -161,11 +161,11 @@ importCandidates里传入的是`TransactionManagementConfigurationSelector`。
 ```java
 Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 if (specificInterceptors != DO_NOT_PROXY) {
-	this.advisedBeans.put(cacheKey, Boolean.TRUE);
-	Object proxy = createProxy(
-			bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
-	this.proxyTypes.put(cacheKey, proxy.getClass());
-	return proxy;
+    this.advisedBeans.put(cacheKey, Boolean.TRUE);
+    Object proxy = createProxy(
+            bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
+    this.proxyTypes.put(cacheKey, proxy.getClass());
+    return proxy;
 }
 ```
 
@@ -184,32 +184,32 @@ if (specificInterceptors != DO_NOT_PROXY) {
 
 ```java
 public Object proceed() throws Throwable {
-	//	We start with an index of -1 and increment early.
-	if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
-		return invokeJoinpoint();
-	}
+    //    We start with an index of -1 and increment early.
+    if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+        return invokeJoinpoint();
+    }
 
-	Object interceptorOrInterceptionAdvice =
-			this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
-	if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
-		// Evaluate dynamic method matcher here: static part will already have
-		// been evaluated and found to match.
-		InterceptorAndDynamicMethodMatcher dm =
-				(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
-		if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
-			return dm.interceptor.invoke(this);
-		}
-		else {
-			// Dynamic matching failed.
-			// Skip this interceptor and invoke the next in the chain.
-			return proceed();
-		}
-	}
-	else {
-		// It's an interceptor, so we just invoke it: The pointcut will have
-		// been evaluated statically before this object was constructed.
-		return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
-	}
+    Object interceptorOrInterceptionAdvice =
+            this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+    if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
+        // Evaluate dynamic method matcher here: static part will already have
+        // been evaluated and found to match.
+        InterceptorAndDynamicMethodMatcher dm =
+                (InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
+        if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
+            return dm.interceptor.invoke(this);
+        }
+        else {
+            // Dynamic matching failed.
+            // Skip this interceptor and invoke the next in the chain.
+            return proceed();
+        }
+    }
+    else {
+        // It's an interceptor, so we just invoke it: The pointcut will have
+        // been evaluated statically before this object was constructed.
+        return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
+    }
 }
 ```
 
@@ -221,17 +221,17 @@ public Object proceed() throws Throwable {
 TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, joinpointIdentification);
 Object retVal = null;
 try {
-	// This is an around advice: Invoke the next interceptor in the chain.
-	// This will normally result in a target object being invoked.
-	retVal = invocation.proceedWithInvocation();
+    // This is an around advice: Invoke the next interceptor in the chain.
+    // This will normally result in a target object being invoked.
+    retVal = invocation.proceedWithInvocation();
 }
 catch (Throwable ex) {
-	// target invocation exception
-	completeTransactionAfterThrowing(txInfo, ex);
-	throw ex;
+    // target invocation exception
+    completeTransactionAfterThrowing(txInfo, ex);
+    throw ex;
 }
 finally {
-	cleanupTransactionInfo(txInfo);
+    cleanupTransactionInfo(txInfo);
 }
 commitTransactionAfterReturning(txInfo);
 return retVal;
@@ -243,31 +243,31 @@ return retVal;
 
 ```java
 protected TransactionInfo createTransactionIfNecessary(
-		PlatformTransactionManager tm, TransactionAttribute txAttr, final String joinpointIdentification) {
+        PlatformTransactionManager tm, TransactionAttribute txAttr, final String joinpointIdentification) {
 
-	// If no name specified, apply method identification as transaction name.
-	if (txAttr != null && txAttr.getName() == null) {
-		txAttr = new DelegatingTransactionAttribute(txAttr) {
-			@Override
-			public String getName() {
-				return joinpointIdentification;
-			}
-		};
-	}
+    // If no name specified, apply method identification as transaction name.
+    if (txAttr != null && txAttr.getName() == null) {
+        txAttr = new DelegatingTransactionAttribute(txAttr) {
+            @Override
+            public String getName() {
+                return joinpointIdentification;
+            }
+        };
+    }
 
-	TransactionStatus status = null;
-	if (txAttr != null) {
-		if (tm != null) {
-			status = tm.getTransaction(txAttr);
-		}
-		else {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Skipping transactional joinpoint [" + joinpointIdentification +
-						"] because no transaction manager has been configured");
-			}
-		}
-	}
-	return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
+    TransactionStatus status = null;
+    if (txAttr != null) {
+        if (tm != null) {
+            status = tm.getTransaction(txAttr);
+        }
+        else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Skipping transactional joinpoint [" + joinpointIdentification +
+                        "] because no transaction manager has been configured");
+            }
+        }
+    }
+    return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
 }
 ```
 
@@ -279,32 +279,32 @@ protected TransactionInfo createTransactionIfNecessary(
 
 ```java
 public Object proceed() throws Throwable {
-	//	We start with an index of -1 and increment early.
-	if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
-		return invokeJoinpoint();
-	}
+    //    We start with an index of -1 and increment early.
+    if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+        return invokeJoinpoint();
+    }
 
-	Object interceptorOrInterceptionAdvice =
-			this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
-	if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
-		// Evaluate dynamic method matcher here: static part will already have
-		// been evaluated and found to match.
-		InterceptorAndDynamicMethodMatcher dm =
-				(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
-		if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
-			return dm.interceptor.invoke(this);
-		}
-		else {
-			// Dynamic matching failed.
-			// Skip this interceptor and invoke the next in the chain.
-			return proceed();
-		}
-	}
-	else {
-		// It's an interceptor, so we just invoke it: The pointcut will have
-		// been evaluated statically before this object was constructed.
-		return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
-	}
+    Object interceptorOrInterceptionAdvice =
+            this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+    if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
+        // Evaluate dynamic method matcher here: static part will already have
+        // been evaluated and found to match.
+        InterceptorAndDynamicMethodMatcher dm =
+                (InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
+        if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
+            return dm.interceptor.invoke(this);
+        }
+        else {
+            // Dynamic matching failed.
+            // Skip this interceptor and invoke the next in the chain.
+            return proceed();
+        }
+    }
+    else {
+        // It's an interceptor, so we just invoke it: The pointcut will have
+        // been evaluated statically before this object was constructed.
+        return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
+    }
 }
 ```
 
@@ -312,12 +312,12 @@ public Object proceed() throws Throwable {
 
 ```java
 protected Object invokeJoinpoint() throws Throwable {
-	if (this.publicMethod) {
-		return this.methodProxy.invoke(this.target, this.arguments);
-	}
-	else {
-		return super.invokeJoinpoint();
-	}
+    if (this.publicMethod) {
+        return this.methodProxy.invoke(this.target, this.arguments);
+    }
+    else {
+        return super.invokeJoinpoint();
+    }
 }
 ```
 
