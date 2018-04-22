@@ -11,7 +11,7 @@ MyBatis探究将是一个系列。从这篇文章开始，我将开始探究MyBa
 - MyBatis的源码分析
 - MyBatis与Spring的结合
 - MyBatis与Spring boot的结合
-
+<!-- more -->
 ## MyBatis使用
 
 MyBatis以SqlSessionFactory为中心，SqlSessionFactory的实例通过SqlSessionFactoryBuilder获得。而SqlSessionFactoryBuilder可以从XML配置文件或一个预先定制的Configuration的实例构建出SqlSessionFactory的实例。
