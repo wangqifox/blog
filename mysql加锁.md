@@ -28,6 +28,10 @@ MySQL InnoDB存储引擎，实现的是基于多版本的并发控制协议—�
 
 针对一条当前读的SQL语句，InnoDB与MySQL Server的交互，是一条一条进行的，因此，加锁也是一条一条进行的。先对一条满足条件的记录加锁，返回给MySQL Server，做一些DML操作；然后再读取下一条加锁，直至读取完毕。
 
+### Cluster Index：聚簇索引
+
+InnoDB存储引擎的数据组织方式，是聚簇索引表：完整的记录，存储在主键索引中，通过主键索引，就可以获取记录所有的列。
+
 ### 两阶段加锁
 
 2PL(Two-Phase Locking)就是将加锁/解锁分为两个完全不相交的阶段。加锁阶段：只加锁，不放锁；解锁阶段：只放锁，不加锁
@@ -345,3 +349,4 @@ InnoDB每个页面为16K，读取一个页面时，需要对页面加S锁，更�
 - http://hedengcheng.com/?p=844
 - http://hedengcheng.com/?p=148
 - http://hedengcheng.com/?p=771
+
