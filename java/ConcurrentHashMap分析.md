@@ -16,7 +16,7 @@ ConcurrentHashMap的实现在JDK1.7和JDK1.8中有着很大的区别。
 JDK1.8中，ConcurrentHashMap抛弃了Segment分段锁机制，取而代之的是采用Node + CAS + Synchronized来保证并发安全地进行。对于锁的粒度，调整为对每个数组元素加锁(Node)。
 
 本文根据JDK1.8来研究ConcurrentHashMap的实现。
-
+<!-- more -->
 ## 相关属性
 
 - `private transient volatile int sizeCtl`
