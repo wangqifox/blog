@@ -45,7 +45,7 @@ org.springframework.cloud.netflix.zuul.ZuulProxyAutoConfiguration
 
     `RouteLocator`有三个实现类：`SimpleRouteLocator`、`DiscoveryClientRouteLocator`、`CompositeRouteLocator`。它们的关系图如下：
 
-![RouteLocato](media/RouteLocator.png)  
+    ![RouteLocato](media/RouteLocator.png)  
 
     `CompositeRouteLocator`是一个综合的路由定位器，它将所有的路由定位器的功能集合起来。因此新建`CompositeRouteLocator`时需要传入当前定义的所有路由定位器。默认情况下传入的是`DiscoveryClientRouteLocator`。
 
@@ -299,8 +299,7 @@ public Object runFilters(String sType) throws Throwable {
     ```java
     Route route = this.routeLocator.getMatchingRoute(requestURI);
     ```
-    
-    在`ZuulProxyAutoConfiguration`配置类中我们知道routeLocator是`CompositeRouteLocator`，它的`getMatchingRoute`方法如下：
+在`ZuulProxyAutoConfiguration`配置类中我们知道routeLocator是`CompositeRouteLocator`，它的`getMatchingRoute`方法如下：
     
     ```java
     public Route getMatchingRoute(String path) {
@@ -313,10 +312,9 @@ public Object runFilters(String sType) throws Throwable {
         return null;
     }
     ```
+可以看到它遍历所有的路由定位器，返回匹配路径的路由定位器。默认情况下，`routeLocators`中只有一个`DiscoveryClientRouteLocator`。实际上这里调用的就是`DiscoveryClientRouteLocator.getMatchingRoute`方法，因为`DiscoveryClientRouteLocator`继承了`SimpleRouteLocator`，`getMatchingRoute`方法实际上位于`SimpleRouteLocator`类中。
     
-    可以看到它遍历所有的路由定位器，返回匹配路径的路由定位器。默认情况下，`routeLocators`中只有一个`DiscoveryClientRouteLocator`。实际上这里调用的就是`DiscoveryClientRouteLocator.getMatchingRoute`方法，因为`DiscoveryClientRouteLocator`继承了`SimpleRouteLocator`，`getMatchingRoute`方法实际上位于`SimpleRouteLocator`类中。
-    
-    `SimpleRouteLocator.getMatchingRoute`方法调用`getSimpleMatchingRoute`，这个方法根据请求路径获取相应的Route，主流程代码如下：
+`SimpleRouteLocator.getMatchingRoute`方法调用`getSimpleMatchingRoute`，这个方法根据请求路径获取相应的Route，主流程代码如下：
     
     ```java
     getRoutesMap();
