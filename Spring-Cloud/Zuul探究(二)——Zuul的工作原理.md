@@ -299,7 +299,8 @@ public Object runFilters(String sType) throws Throwable {
     ```java
     Route route = this.routeLocator.getMatchingRoute(requestURI);
     ```
-在`ZuulProxyAutoConfiguration`配置类中我们知道routeLocator是`CompositeRouteLocator`，它的`getMatchingRoute`方法如下：
+    
+    在`ZuulProxyAutoConfiguration`配置类中我们知道routeLocator是`CompositeRouteLocator`，它的`getMatchingRoute`方法如下：
     
     ```java
     public Route getMatchingRoute(String path) {
@@ -312,6 +313,7 @@ public Object runFilters(String sType) throws Throwable {
         return null;
     }
     ```
+    
     可以看到它遍历所有的路由定位器，返回匹配路径的路由定位器。默认情况下，`routeLocators`中只有一个`DiscoveryClientRouteLocator`。实际上这里调用的就是`DiscoveryClientRouteLocator.getMatchingRoute`方法，因为`DiscoveryClientRouteLocator`继承了`SimpleRouteLocator`，`getMatchingRoute`方法实际上位于`SimpleRouteLocator`类中。
     
     `SimpleRouteLocator.getMatchingRoute`方法调用`getSimpleMatchingRoute`，这个方法根据请求路径获取相应的Route，主流程代码如下：
