@@ -293,16 +293,8 @@ public Object runFilters(String sType) throws Throwable {
     RequestContext ctx = RequestContext.getCurrentContext();
     final String requestURI = this.urlPathHelper.getPathWithinApplication(ctx.getRequest());
     ```
-    
-    
-    
-    test
 
 2. 根据请求路径获取路由
-
-    ```java
-    Route route = this.routeLocator.getMatchingRoute(requestURI);
-    ```
     
     在`ZuulProxyAutoConfiguration`配置类中我们知道routeLocator是`CompositeRouteLocator`，它的`getMatchingRoute`方法如下：
     
@@ -327,7 +319,7 @@ public Object runFilters(String sType) throws Throwable {
     String adjustedPath = adjustPath(path);
     ZuulRoute route = getZuulRoute(adjustedPath);
     return getRoute(route, adjustedPath);
-    ```
+```
     
     1. 调用`getRoutesMap`。如果路径与路由的映射关系没有初始化，则在`getRoutesMap`方法中进行初始化
     2. 调用`getZuulRoute`方法，遍历所有路由对应的路径，根据请求路径调用`AntPathMatcher.match()`方法找到匹配的路由。
