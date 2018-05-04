@@ -216,7 +216,7 @@ CMS等收集器的关注点是尽可能地缩短垃圾收集时用户线程的�
 
 老年代收集器。Serial收集器的老年代版本，它同样是单线程收集器，使用"标记-整理"算法。
 
-主要意义也是在于给Client模式下的虚拟机使用。如果在Server模式下，那么它主要还有两大用途：一种用途是在JDK 1.5以及之前的版本中与Parallel Scavenge收集器搭配使用，另一种用途就是作为CMS收集器的后备预案，在并发收集发生Concurrent Mode Failure时使用。
+主要意义也是在于给Client模式下的虚拟机使用。如果在Server模式下，那么它主要还有两大用途：一种用途是在JDK 1.5以及之前的版本中与Parallel Scavenge收集器搭配使用，另一种用途就是作为CMS收集器的后备预案，在并发收集发生Concurrent Mode Failure时使用。
 
 ##### Parallel Old收集器
 

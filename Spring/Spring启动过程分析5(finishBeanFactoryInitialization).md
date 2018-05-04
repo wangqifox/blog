@@ -112,7 +112,7 @@ public void preInstantiateSingletons() throws BeansException {
 
 ### bean初始化
 
-bean初始化调用的是`AbstractBeanFactory.getBean`，最终调用的是`AbstractBeanFactory.doGetBean`
+bean初始化调用的是`AbstractBeanFactory.getBean`，最终调用的是`AbstractBeanFactory.doGetBean`
 
 ```java
 protected <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args, boolean typeCheckOnly) throws BeansException {
@@ -702,7 +702,7 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
     
     支持`@PostConstruct`、`@PreDestroy`注释
     
-- AutowiredAnnotationBeanPostProcessor
+- AutowiredAnnotationBeanPostProcessor
 
     支持`@Autowired`、`@Value`注释
 

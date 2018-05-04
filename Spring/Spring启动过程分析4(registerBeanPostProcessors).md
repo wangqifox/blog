@@ -132,7 +132,7 @@ public static void registerBeanPostProcessors(
 1. 先找出实现了PriorityOrdered接口的BeanPostProcessor并排序后加到BeanFactory的BeanPostProcessor集合中
 2. 找出实现了Ordered接口的BeanPostProcessor并排序后加到BeanFactory的BeanPostProcessor集合中
 
-注册BeanPostProcessor的代码如下，`PostProcessorRegistrationDelegate.registerBeanPostProcessors`：
+注册BeanPostProcessor的代码如下，`PostProcessorRegistrationDelegate.registerBeanPostProcessors`：
 
 ```java
 private static void registerBeanPostProcessors(ConfigurableListBeanFactory beanFactory, List<BeanPostProcessor> postProcessors) {
