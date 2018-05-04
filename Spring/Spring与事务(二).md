@@ -151,7 +151,7 @@ importCandidates里传入的是`TransactionManagementConfigurationSelector`。
 
 在`initializeBean`方法中，调用`applyBeanPostProcessorsAfterInitialization`，它调用各个beanPostProcessor的`postProcessAfterInitialization`。
 
-重点是`InfrastructureAdvisorAutoProxyCreator`，它创建了使用事务的类的代理类。
+重点是`InfrastructureAdvisorAutoProxyCreator`，它创建了使用事务的类的代理类。
 
 `AbstractAutoProxyCreator.postProcessAfterInitialization` ->
 `AbstractAutoProxyCreator.wrapIfNecessary` ->
