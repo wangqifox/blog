@@ -3,7 +3,7 @@ title: Spring与MVC(五)
 date: 2018/01/24 18:47:00
 ---
 
-在上一篇文章[Spring与MVC(四)][1]中，我们分析了`DispatcherServlet`在处理请求时是如何找到正确的Controller，以及如何执行。在这篇文章中，我们来看分析一下Spring MVC是如何处理方法参数以及响应返回值的。
+上一篇文章[Spring与MVC(四)][1]，我们分析了`DispatcherServlet`在处理请求时是如何找到正确的Controller，以及如何执行。在这篇文章中，我们来看分析一下Spring MVC是如何处理方法参数以及响应返回值的。
 <!-- more -->
 
 首先让我们来看一下Spring MVC中两个重要的接口，这两个接口分别对应请求方法参数的处理、响应返回值的处理，分别是`HandlerMethodArgumentResolver`和`HandlerMethodReturnValueHandler`。
