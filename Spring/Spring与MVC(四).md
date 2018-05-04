@@ -299,7 +299,7 @@ protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpSer
 }
 ```
 
-可以看到`HandlerExecutionChain`中包含了`HandlerMethod`以及`HandlerInterceptor`(拦截器)列表。
+可以看到`HandlerExecutionChain`中包含了`HandlerMethod`以及`HandlerInterceptor`(拦截器)列表：包含`ConversionServiceExposingInterceptor`, `ResourceUrlProviderExposingInterceptor`。
 
 ## HandlerExecutionChain的执行
 
