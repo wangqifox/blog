@@ -174,7 +174,7 @@ private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parame
 
 它的流程和`RequestParamMethodArgumentResolver`是一致的，因为它们调用的都是`AbstractNamedValueMethodArgumentResolver`父类的`resolveArgument`方法。唯一不同的是`resolveName`方法：
 
-`resolveName`方法从request的多个属性中获取`org.springframework.web.servlet.HandlerMapping.uriTemplateVariables`属性，然后从中获取参数的值。
+`resolveName`方法从request的多个属性中获取`org.springframework.web.servlet.HandlerMapping.uriTemplateVariables`属性，然后从中获取参数的值。
 
 那么`org.springframework.web.servlet.HandlerMapping.uriTemplateVariables`属性何时获得的呢，其实它是在根据请求获取处理方法的时候获得的，即`DispatcherServlet`的`doDispatch`方法执行`getHandler`的时候。具体是在获得最佳匹配函数之后，处理它的时候：`RequestMappingInfoHandlerMapping.handleMatch`：
 
