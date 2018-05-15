@@ -1,5 +1,6 @@
 ---
 title: Java日志工具类
+date: 2017/11/23 15:43:00
 ---
 
 
@@ -66,3 +67,5 @@ logback天然与slf4j适配，不需要额外引入适配库
 > http://tech.lede.com/2017/02/06/rd/server/log4jSearch/
 >
 > http://www.jianshu.com/p/85d141365d39
+
+
