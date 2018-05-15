@@ -17,7 +17,7 @@ sudo visudo
 # Members of the admin group may gain root privileges
 robin ALL=(ALL) NOPASSWD:ALL
 ```
-
+<!-- more -->
 
 # 文件的打包、解压缩指令
 

@@ -1,5 +1,6 @@
 ---
 title: Linux的三个权限
+date: 2017/09/19 11:17:00
 ---
 
 Linux还有三个比较特殊的权限，分别是：setuid，setgid，stick bit （粘滞位）
@@ -33,3 +34,4 @@ Linux还有三个比较特殊的权限，分别是：setuid，setgid，stick bit
 	chmod 1775 xxx # 设置stick bit权限，针对目录
 
 注意：有时你设置了s或t  权限，你会发现它变成了S或T，这是因为在那个位置上你没有给它x(可执行)的权限，这样的话这样的设置是不会有效的，你可以先给它赋上x的权限，然后再给s或t  的权限。
+

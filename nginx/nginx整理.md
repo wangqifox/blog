@@ -1,5 +1,6 @@
 ---
 title: nginx整理
+date: 2017/12/22 11:17:00
 ---
 
 ## 内置预定义变量
@@ -186,3 +187,4 @@ location /i/ {
 ## proxy_redirect
 
 `proxy_redirect http:// $scheme://` 表示在程序中有redirect跳转时，将采用原有传输协议方式跳转，即如果是以https请求，在跳转后依然是https
+
