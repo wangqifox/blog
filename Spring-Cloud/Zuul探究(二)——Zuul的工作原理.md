@@ -17,7 +17,7 @@ org.springframework.cloud.netflix.zuul.ZuulServerAutoConfiguration,\
 org.springframework.cloud.netflix.zuul.ZuulProxyAutoConfiguration
 ```
 
-可以看到`spring.factories`文件中指定了两个类：`ZuulServerAutoConfiguration`、`ZuulProxyAutoConfiguration`用于自动配置。我们来看看`ZuulProxyAutoConfiguration`类中配置了哪些相关的bean。
+可以看到`spring.factories`文件中指定了两个类：`ZuulServerAutoConfiguration`、`ZuulProxyAutoConfiguration`用于自动配置。我们来看看`ZuulServerAutoConfiguration`类中配置了哪些相关的bean。
 
 - CompositeRouteLocator
 
@@ -145,6 +145,47 @@ ZuulHandlerMapping在注册发生在第一次请求发生的时候，在`ZuulHan
 
 在`ZuulHandlerMapping.registerHandlers`方法中首先获取所有的路由，然后调用`AbstractUrlHandlerMapping.registerHandler`将路由中的路径和`ZuulHandlerMapping`相关联。
 
+### ZuulHandlerMapping的工作原理
+
+当接收到一个请求后，处理请求的过程统一在`DispatcherServlet.doDispatch`中进行。
+
+在`DispatcherServlet.doDispatch`方法中调用`DispatcherServlet.getHandler`方法获取handler，在该方法中遍历所有的HandlerMapping，调用其`getHandler`方法获得HandlerExecutionChain，如果不为null说明正是我们要找的handler。
+
+#### ZuulHandlerMapping的获取
+
+对于ZuulHandlerMapping的`getHandler`方法的调用流程如下：
+
+1. AbstractUrlHandlerMapping.getHandlerInternal：根据request的path查找匹配的handler
+
+    `getHandlerInternal`方法根据`lookupPath`(请求路径)、`request`(请求)调用`ZuulHandlerMapping.lookupHandler`方法查找匹配的handler。
+    
+    `ZuulHandlerMapping.lookupHandler`的调用流程如下：
+    
+    1. 判断是否在请求errorPath
+    2. 请求的路径是否处于routeLocator被忽略的路径中
+    3. 请求上下文中是否包含`forward.to`
+    4. 调用`AbstractUrlHandlerMapping.lookupHandler`
+
+    `AbstractUrlHandlerMapping.lookupHandler`的调用流程如下：
+    
+    1. 检查`handlerMap`中是否包含了请求路径对应的Handler。（`handlerMap`是在ZuulHandlerMapping执行`registerHandlers()`方法是注册的。将所有Route的路径映射为ZuulController）
+    2. 将请求路径与`handlerMap`中的路径进行匹配，将`handlerMap`中匹配的路径添加到`matchingPatterns`列表中
+    3. 从`matchingPatterns`列表中取得第一个路径作为最佳匹配的路径bestMatch
+    4. 从`handlerMap`中获取bestMatch对应的Handler，即ZuulController
+    5. 将handler、bestMatch等包装成HandlerExecutionChain返回
+    
+2. 因为返回的handler不为null，调用`getHandlerExecutionChain`将其包装成HandlerExecutionChain，加入拦截器信息。返回`executionChain`。
+
+#### ZuulHandlerMapping的调用
+
+ZuulHandlerMapping的调用发生在`DispatcherServlet.doDispatch`执行时。调用流程如下：
+
+1. SimpleControllerHandlerAdapter.handle
+2. ZuulController.handleRequest
+3. ServletWrappingController.handleRequestInternal
+4. ZuulServlet.service
+
+可以看到ZuulHandlerMapping最终调用了`ZuulServlet.service`方法。
     
 ## ZuulServlet
     
