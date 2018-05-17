@@ -14,33 +14,33 @@ date: 2018/01/24 18:47:00
 
 ```java
 public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,
-		Object... providedArgs) throws Exception {
+        Object... providedArgs) throws Exception {
 
-	Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
-	setResponseStatus(webRequest);
+    Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+    setResponseStatus(webRequest);
 
-	if (returnValue == null) {
-		if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
-			mavContainer.setRequestHandled(true);
-			return;
-		}
-	}
-	else if (StringUtils.hasText(getResponseStatusReason())) {
-		mavContainer.setRequestHandled(true);
-		return;
-	}
+    if (returnValue == null) {
+        if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
+            mavContainer.setRequestHandled(true);
+            return;
+        }
+    }
+    else if (StringUtils.hasText(getResponseStatusReason())) {
+        mavContainer.setRequestHandled(true);
+        return;
+    }
 
-	mavContainer.setRequestHandled(false);
-	try {
-		this.returnValueHandlers.handleReturnValue(
-				returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
-	}
-	catch (Exception ex) {
-		if (logger.isTraceEnabled()) {
-			logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
-		}
-		throw ex;
-	}
+    mavContainer.setRequestHandled(false);
+    try {
+        this.returnValueHandlers.handleReturnValue(
+                returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
+    }
+    catch (Exception ex) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
+        }
+        throw ex;
+    }
 }
 ```
 
@@ -48,19 +48,19 @@ public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer 
 
 ```java
 public Object invokeForRequest(NativeWebRequest request, ModelAndViewContainer mavContainer,
-		Object... providedArgs) throws Exception {
+        Object... providedArgs) throws Exception {
 
-	Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
-	if (logger.isTraceEnabled()) {
-		logger.trace("Invoking '" + ClassUtils.getQualifiedMethodName(getMethod(), getBeanType()) +
-				"' with arguments " + Arrays.toString(args));
-	}
-	Object returnValue = doInvoke(args);
-	if (logger.isTraceEnabled()) {
-		logger.trace("Method [" + ClassUtils.getQualifiedMethodName(getMethod(), getBeanType()) +
-				"] returned [" + returnValue + "]");
-	}
-	return returnValue;
+    Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
+    if (logger.isTraceEnabled()) {
+        logger.trace("Invoking '" + ClassUtils.getQualifiedMethodName(getMethod(), getBeanType()) +
+                "' with arguments " + Arrays.toString(args));
+    }
+    Object returnValue = doInvoke(args);
+    if (logger.isTraceEnabled()) {
+        logger.trace("Method [" + ClassUtils.getQualifiedMethodName(getMethod(), getBeanType()) +
+                "] returned [" + returnValue + "]");
+    }
+    return returnValue;
 }
 ```
 
@@ -68,37 +68,37 @@ public Object invokeForRequest(NativeWebRequest request, ModelAndViewContainer m
 
 ```java
 private Object[] getMethodArgumentValues(NativeWebRequest request, ModelAndViewContainer mavContainer,
-		Object... providedArgs) throws Exception {
+        Object... providedArgs) throws Exception {
 
-	MethodParameter[] parameters = getMethodParameters();
-	Object[] args = new Object[parameters.length];
-	for (int i = 0; i < parameters.length; i++) {
-		MethodParameter parameter = parameters[i];
-		parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
-		args[i] = resolveProvidedArgument(parameter, providedArgs);
-		if (args[i] != null) {
-			continue;
-		}
-		if (this.argumentResolvers.supportsParameter(parameter)) {
-			try {
-				args[i] = this.argumentResolvers.resolveArgument(
-						parameter, mavContainer, request, this.dataBinderFactory);
-				continue;
-			}
-			catch (Exception ex) {
-				if (logger.isDebugEnabled()) {
-					logger.debug(getArgumentResolutionErrorMessage("Failed to resolve", i), ex);
-				}
-				throw ex;
-			}
-		}
-		if (args[i] == null) {
-			throw new IllegalStateException("Could not resolve method parameter at index " +
-					parameter.getParameterIndex() + " in " + parameter.getMethod().toGenericString() +
-					": " + getArgumentResolutionErrorMessage("No suitable resolver for", i));
-		}
-	}
-	return args;
+    MethodParameter[] parameters = getMethodParameters();
+    Object[] args = new Object[parameters.length];
+    for (int i = 0; i < parameters.length; i++) {
+        MethodParameter parameter = parameters[i];
+        parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
+        args[i] = resolveProvidedArgument(parameter, providedArgs);
+        if (args[i] != null) {
+            continue;
+        }
+        if (this.argumentResolvers.supportsParameter(parameter)) {
+            try {
+                args[i] = this.argumentResolvers.resolveArgument(
+                        parameter, mavContainer, request, this.dataBinderFactory);
+                continue;
+            }
+            catch (Exception ex) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(getArgumentResolutionErrorMessage("Failed to resolve", i), ex);
+                }
+                throw ex;
+            }
+        }
+        if (args[i] == null) {
+            throw new IllegalStateException("Could not resolve method parameter at index " +
+                    parameter.getParameterIndex() + " in " + parameter.getMethod().toGenericString() +
+                    ": " + getArgumentResolutionErrorMessage("No suitable resolver for", i));
+        }
+    }
+    return args;
 }
 ```
 
@@ -106,21 +106,21 @@ private Object[] getMethodArgumentValues(NativeWebRequest request, ModelAndViewC
 
 ```java
 private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parameter) {
-	HandlerMethodArgumentResolver result = this.argumentResolverCache.get(parameter);
-	if (result == null) {
-		for (HandlerMethodArgumentResolver methodArgumentResolver : this.argumentResolvers) {
-			if (logger.isTraceEnabled()) {
-				logger.trace("Testing if argument resolver [" + methodArgumentResolver + "] supports [" +
-						parameter.getGenericParameterType() + "]");
-			}
-			if (methodArgumentResolver.supportsParameter(parameter)) {
-				result = methodArgumentResolver;
-				this.argumentResolverCache.put(parameter, result);
-				break;
-			}
-		}
-	}
-	return result;
+    HandlerMethodArgumentResolver result = this.argumentResolverCache.get(parameter);
+    if (result == null) {
+        for (HandlerMethodArgumentResolver methodArgumentResolver : this.argumentResolvers) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Testing if argument resolver [" + methodArgumentResolver + "] supports [" +
+                        parameter.getGenericParameterType() + "]");
+            }
+            if (methodArgumentResolver.supportsParameter(parameter)) {
+                result = methodArgumentResolver;
+                this.argumentResolverCache.put(parameter, result);
+                break;
+            }
+        }
+    }
+    return result;
 }
 ```
 
@@ -193,8 +193,8 @@ decodedUriVariables = getUrlPathHelper().decodePathVariables(request, uriVariabl
 
 ```java
 public boolean supportsParameter(MethodParameter parameter) {
-	return (parameter.hasParameterAnnotation(ModelAttribute.class) ||
-			(this.annotationNotRequired && !BeanUtils.isSimpleProperty(parameter.getParameterType())));
+    return (parameter.hasParameterAnnotation(ModelAttribute.class) ||
+            (this.annotationNotRequired && !BeanUtils.isSimpleProperty(parameter.getParameterType())));
 }
 ```
 
@@ -202,17 +202,17 @@ public boolean supportsParameter(MethodParameter parameter) {
 
 ```java
 public static boolean isSimpleProperty(Class<?> clazz) {
-	Assert.notNull(clazz, "Class must not be null");
-	return isSimpleValueType(clazz) || (clazz.isArray() && isSimpleValueType(clazz.getComponentType()));
+    Assert.notNull(clazz, "Class must not be null");
+    return isSimpleValueType(clazz) || (clazz.isArray() && isSimpleValueType(clazz.getComponentType()));
 }
 
 public static boolean isSimpleValueType(Class<?> clazz) {
-	return (ClassUtils.isPrimitiveOrWrapper(clazz) || clazz.isEnum() ||
-			CharSequence.class.isAssignableFrom(clazz) ||
-			Number.class.isAssignableFrom(clazz) ||
-			Date.class.isAssignableFrom(clazz) ||
-			URI.class == clazz || URL.class == clazz ||
-			Locale.class == clazz || Class.class == clazz);
+    return (ClassUtils.isPrimitiveOrWrapper(clazz) || clazz.isEnum() ||
+            CharSequence.class.isAssignableFrom(clazz) ||
+            Number.class.isAssignableFrom(clazz) ||
+            Date.class.isAssignableFrom(clazz) ||
+            URI.class == clazz || URL.class == clazz ||
+            Locale.class == clazz || Class.class == clazz);
 }
 ```
 
@@ -222,68 +222,68 @@ public static boolean isSimpleValueType(Class<?> clazz) {
 2. 调用`createAttribute`来生成绑定的对象，注意这时对象的内容为空
 3. 调用`binderFactory.createBinder`来生成一个数据绑定器。默认情况这里具体的类是`ExtendedServletRequestDataBinder`
 4. 调用`bindRequestParameters`来绑定请求参数，其中`ServletModelAttributeMethodProcessor`的`bindRequestParameters`方法如下
-	
-	```java
-	protected void bindRequestParameters(WebDataBinder binder, NativeWebRequest request) {
-		ServletRequest servletRequest = request.getNativeRequest(ServletRequest.class);
-		ServletRequestDataBinder servletBinder = (ServletRequestDataBinder) binder;
-		servletBinder.bind(servletRequest);
-	}
-	```
+    
+    ```java
+    protected void bindRequestParameters(WebDataBinder binder, NativeWebRequest request) {
+        ServletRequest servletRequest = request.getNativeRequest(ServletRequest.class);
+        ServletRequestDataBinder servletBinder = (ServletRequestDataBinder) binder;
+        servletBinder.bind(servletRequest);
+    }
+    ```
 
-	其中servletBinder为`ExtendedServletRequestDataBinder`
+    其中servletBinder为`ExtendedServletRequestDataBinder`
 
-	调用dataBinder的`bind`方法填充对象中的数据
+    调用dataBinder的`bind`方法填充对象中的数据
 
-	```java
-	public void bind(ServletRequest request) {
-		MutablePropertyValues mpvs = new ServletRequestParameterPropertyValues(request);
-		MultipartRequest multipartRequest = WebUtils.getNativeRequest(request, MultipartRequest.class);
-		if (multipartRequest != null) {
-			bindMultipart(multipartRequest.getMultiFileMap(), mpvs);
-		}
-		addBindValues(mpvs, request);
-		doBind(mpvs);
-	}
-	```
-	
-	首先读取请求中所有参数以及参数对应的值生成`MutablePropertyValues`。然后调用`addBindValues`将请求路径中的参数与值合并到mpvs中。
-	
-	然后调用`doBind`将请求的参数绑定到对象上。
+    ```java
+    public void bind(ServletRequest request) {
+        MutablePropertyValues mpvs = new ServletRequestParameterPropertyValues(request);
+        MultipartRequest multipartRequest = WebUtils.getNativeRequest(request, MultipartRequest.class);
+        if (multipartRequest != null) {
+            bindMultipart(multipartRequest.getMultiFileMap(), mpvs);
+        }
+        addBindValues(mpvs, request);
+        doBind(mpvs);
+    }
+    ```
+    
+    首先读取请求中所有参数以及参数对应的值生成`MutablePropertyValues`。然后调用`addBindValues`将请求路径中的参数与值合并到mpvs中。
+    
+    然后调用`doBind`将请求的参数绑定到对象上。
 
 5. 调用`validateIfApplicable`方法，判断生成的参数对象是否符合要求
-	
+    
 ### @RequestBody
-	
+    
 如果参数带着`@RequestBody`注释，选择`RequestResponseBodyMethodProcessor`。来看一下它的`resolveArgument`方法是如何工作的：
 
 1. 调用`readWithMessageConverters`读取请求内容生成对应的参数对象
 
-	其中messageConverters有如下7个供选择：
-	
-	1. ByteArrayHttpMessageConverter
-	2. StringHttpMessageConverter
-	3. ResourceHttpMessageConverter
-	4. SourceHttpMessageConverter
-	5. AllEncompassingFormHttpMessageConverter
-	6. Jaxb2RootElementHttpMessageConverter
-	7. MappingJackson2HttpMessageConverter
+    其中messageConverters有如下7个供选择：
+    
+    1. ByteArrayHttpMessageConverter
+    2. StringHttpMessageConverter
+    3. ResourceHttpMessageConverter
+    4. SourceHttpMessageConverter
+    5. AllEncompassingFormHttpMessageConverter
+    6. Jaxb2RootElementHttpMessageConverter
+    7. MappingJackson2HttpMessageConverter
 
-	**注意`MappingJackson2HttpMessageConverter`并不是默认有的，需要在配置文件中配置**
-	
-	通过调用messageConverter的`canRead`方法判断这个messageConverter是否可以读取请求生成对应的参数。
-	
-	找到合适的messageConverter之后执行三步操作：
-	
-	1. 调用`RequestBodyAdvice`的`beforeBodyRead`方法对请求进行处理。
-	2. 调用messageConverter的`read`方法，读取请求内容生成对应的参数对象
-	3. 调用`RequestBodyAdvice`的`afterBodyRead`方法对生成的参数对象进行处理
+    **注意`MappingJackson2HttpMessageConverter`并不是默认有的，需要在配置文件中配置**
+    
+    通过调用messageConverter的`canRead`方法判断这个messageConverter是否可以读取请求生成对应的参数。
+    
+    找到合适的messageConverter之后执行三步操作：
+    
+    1. 调用`RequestBodyAdvice`的`beforeBodyRead`方法对请求进行处理。
+    2. 调用messageConverter的`read`方法，读取请求内容生成对应的参数对象
+    3. 调用`RequestBodyAdvice`的`afterBodyRead`方法对生成的参数对象进行处理
 
-	返回生成的参数对象
-	
+    返回生成的参数对象
+    
 2. 创建`WebDataBinder`，具体的类是`ExtendedServletRequestDataBinder`
 3. 调用`validateIfApplicable`方法，判断生成的参数对象是否符合要求
-	
+    
 ## 返回值的响应
 
 回到`ServletInvocableHandlerMethod.invokeAndHandle`方法，调用`invokeForRequest`方法执行完controller方法得到返回值`returnValue`。
@@ -292,26 +292,26 @@ public static boolean isSimpleValueType(Class<?> clazz) {
 
 ```java
 public void handleReturnValue(Object returnValue, MethodParameter returnType,
-		ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+        ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
 
-	HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
-	if (handler == null) {
-		throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
-	}
-	handler.handleReturnValue(returnValue, returnType, mavContainer, webRequest);
+    HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
+    if (handler == null) {
+        throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
+    }
+    handler.handleReturnValue(returnValue, returnType, mavContainer, webRequest);
 }
 
 private HandlerMethodReturnValueHandler selectHandler(Object value, MethodParameter returnType) {
-	boolean isAsyncValue = isAsyncReturnValue(value, returnType);
-	for (HandlerMethodReturnValueHandler handler : this.returnValueHandlers) {
-		if (isAsyncValue && !(handler instanceof AsyncHandlerMethodReturnValueHandler)) {
-			continue;
-		}
-		if (handler.supportsReturnType(returnType)) {
-			return handler;
-		}
-	}
-	return null;
+    boolean isAsyncValue = isAsyncReturnValue(value, returnType);
+    for (HandlerMethodReturnValueHandler handler : this.returnValueHandlers) {
+        if (isAsyncValue && !(handler instanceof AsyncHandlerMethodReturnValueHandler)) {
+            continue;
+        }
+        if (handler.supportsReturnType(returnType)) {
+            return handler;
+        }
+    }
+    return null;
 }
 ```
 
@@ -339,20 +339,20 @@ private HandlerMethodReturnValueHandler selectHandler(Object value, MethodParame
 
 ```java
 public void handleReturnValue(Object returnValue, MethodParameter returnType,
-		ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+        ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
 
-	if (returnValue instanceof CharSequence) {
-		String viewName = returnValue.toString();
-		mavContainer.setViewName(viewName);
-		if (isRedirectViewName(viewName)) {
-			mavContainer.setRedirectModelScenario(true);
-		}
-	}
-	else if (returnValue != null){
-		// should not happen
-		throw new UnsupportedOperationException("Unexpected return type: " +
-				returnType.getParameterType().getName() + " in method: " + returnType.getMethod());
-	}
+    if (returnValue instanceof CharSequence) {
+        String viewName = returnValue.toString();
+        mavContainer.setViewName(viewName);
+        if (isRedirectViewName(viewName)) {
+            mavContainer.setRedirectModelScenario(true);
+        }
+    }
+    else if (returnValue != null){
+        // should not happen
+        throw new UnsupportedOperationException("Unexpected return type: " +
+                returnType.getParameterType().getName() + " in method: " + returnType.getMethod());
+    }
 }
 ```
 
@@ -369,15 +369,15 @@ public void handleReturnValue(Object returnValue, MethodParameter returnType,
 
 ```java
 public void handleReturnValue(Object returnValue, MethodParameter returnType,
-		ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
-		throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
+        ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
+        throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
 
-	mavContainer.setRequestHandled(true);
-	ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
-	ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
+    mavContainer.setRequestHandled(true);
+    ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
+    ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
 
-	// Try even with null return value. ResponseBodyAdvice could get involved.
-	writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
+    // Try even with null return value. ResponseBodyAdvice could get involved.
+    writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
 }
 ```
 
@@ -386,17 +386,17 @@ public void handleReturnValue(Object returnValue, MethodParameter returnType,
 1. 调用`getAcceptableMediaTypes`方法来获取请求头的"ACCEPT"字段指定客户端能够接收的内容类型`requestedMediaTypes`
 2. 调用`getProducibleMedaiTypes`方法获取当前能够生成的内容类型`producibleMediaTypes`
 
-	`getProducibleMedaiTypes`遍历当前所有的messageConverters:
-	
-	1. ByteArrayHttpMessageConverter
-	2. StringHttpMessageConverter
-	3. ResourceHttpMessageConverter
-	4. SourceHttpMessageConverter
-	5. AllEncompassingFormHttpMessageConverter
-	6. Jaxb2RootElementHttpMessageConverter
+    `getProducibleMedaiTypes`遍历当前所有的messageConverters:
+    
+    1. ByteArrayHttpMessageConverter
+    2. StringHttpMessageConverter
+    3. ResourceHttpMessageConverter
+    4. SourceHttpMessageConverter
+    5. AllEncompassingFormHttpMessageConverter
+    6. Jaxb2RootElementHttpMessageConverter
 
-	调用`canWrite`方法判断返回的类是否可以由该`converter`来输出，如果可以输出的话添加该`converter`支持的`MediaType`。
-	
+    调用`canWrite`方法判断返回的类是否可以由该`converter`来输出，如果可以输出的话添加该`converter`支持的`MediaType`。
+    
 3. 调用`isCompatibleWith`方法，从`requestedMediaTypes`和`producibleMediaTypes`中挑选兼容的类型
 4. 遍历`messageConverters`，调用`canWrite`方法选择合适的messageConverter
 5. 获取`RequestResponseBodyAdviceChain`，调用`beforeBodyWrite`对返回值进行处理
