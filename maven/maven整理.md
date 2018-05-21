@@ -3,6 +3,9 @@ title: maven整理
 date: 2018/05/10 08:05:00
 ---
 
+Maven命令整理
+<!-- more -->
+
 # 使用Maven运行Java main的3中方式
 
 > https://blog.csdn.net/qbg19881206/article/details/19850857
