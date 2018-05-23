@@ -41,31 +41,31 @@ date: 2018/01/23 18:41:00
 
 ```java
 protected void initHandlerMethods() {
-	if (logger.isDebugEnabled()) {
-		logger.debug("Looking for request mappings in application context: " + getApplicationContext());
-	}
-	String[] beanNames = (this.detectHandlerMethodsInAncestorContexts ?
-			BeanFactoryUtils.beanNamesForTypeIncludingAncestors(getApplicationContext(), Object.class) :
-			getApplicationContext().getBeanNamesForType(Object.class));
+    if (logger.isDebugEnabled()) {
+        logger.debug("Looking for request mappings in application context: " + getApplicationContext());
+    }
+    String[] beanNames = (this.detectHandlerMethodsInAncestorContexts ?
+            BeanFactoryUtils.beanNamesForTypeIncludingAncestors(getApplicationContext(), Object.class) :
+            getApplicationContext().getBeanNamesForType(Object.class));
 
-	for (String beanName : beanNames) {
-		if (!beanName.startsWith(SCOPED_TARGET_NAME_PREFIX)) {
-			Class<?> beanType = null;
-			try {
-				beanType = getApplicationContext().getType(beanName);
-			}
-			catch (Throwable ex) {
-				// An unresolvable bean type, probably from a lazy bean - let's ignore it.
-				if (logger.isDebugEnabled()) {
-					logger.debug("Could not resolve target class for bean with name '" + beanName + "'", ex);
-				}
-			}
-			if (beanType != null && isHandler(beanType)) {
-				detectHandlerMethods(beanName);
-			}
-		}
-	}
-	handlerMethodsInitialized(getHandlerMethods());
+    for (String beanName : beanNames) {
+        if (!beanName.startsWith(SCOPED_TARGET_NAME_PREFIX)) {
+            Class<?> beanType = null;
+            try {
+                beanType = getApplicationContext().getType(beanName);
+            }
+            catch (Throwable ex) {
+                // An unresolvable bean type, probably from a lazy bean - let's ignore it.
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Could not resolve target class for bean with name '" + beanName + "'", ex);
+                }
+            }
+            if (beanType != null && isHandler(beanType)) {
+                detectHandlerMethods(beanName);
+            }
+        }
+    }
+    handlerMethodsInitialized(getHandlerMethods());
 }
 ```
 
@@ -75,32 +75,32 @@ protected void initHandlerMethods() {
 
 ```java
 protected void detectHandlerMethods(final Object handler) {
-	Class<?> handlerType = (handler instanceof String ?
-			getApplicationContext().getType((String) handler) : handler.getClass());
-	final Class<?> userType = ClassUtils.getUserClass(handlerType);
+    Class<?> handlerType = (handler instanceof String ?
+            getApplicationContext().getType((String) handler) : handler.getClass());
+    final Class<?> userType = ClassUtils.getUserClass(handlerType);
 
-	Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
-			new MethodIntrospector.MetadataLookup<T>() {
-				@Override
-				public T inspect(Method method) {
-					try {
-						return getMappingForMethod(method, userType);
-					}
-					catch (Throwable ex) {
-						throw new IllegalStateException("Invalid mapping on handler class [" +
-								userType.getName() + "]: " + method, ex);
-					}
-				}
-			});
+    Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
+            new MethodIntrospector.MetadataLookup<T>() {
+                @Override
+                public T inspect(Method method) {
+                    try {
+                        return getMappingForMethod(method, userType);
+                    }
+                    catch (Throwable ex) {
+                        throw new IllegalStateException("Invalid mapping on handler class [" +
+                                userType.getName() + "]: " + method, ex);
+                    }
+                }
+            });
 
-	if (logger.isDebugEnabled()) {
-		logger.debug(methods.size() + " request handler methods found on " + userType + ": " + methods);
-	}
-	for (Map.Entry<Method, T> entry : methods.entrySet()) {
-		Method invocableMethod = AopUtils.selectInvocableMethod(entry.getKey(), userType);
-		T mapping = entry.getValue();
-		registerHandlerMethod(handler, invocableMethod, mapping);
-	}
+    if (logger.isDebugEnabled()) {
+        logger.debug(methods.size() + " request handler methods found on " + userType + ": " + methods);
+    }
+    for (Map.Entry<Method, T> entry : methods.entrySet()) {
+        Method invocableMethod = AopUtils.selectInvocableMethod(entry.getKey(), userType);
+        T mapping = entry.getValue();
+        registerHandlerMethod(handler, invocableMethod, mapping);
+    }
 }
 ```
 
@@ -108,14 +108,14 @@ protected void detectHandlerMethods(final Object handler) {
 
 ```java
 protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
-	RequestMappingInfo info = createRequestMappingInfo(method);
-	if (info != null) {
-		RequestMappingInfo typeInfo = createRequestMappingInfo(handlerType);
-		if (typeInfo != null) {
-			info = typeInfo.combine(info);
-		}
-	}
-	return info;
+    RequestMappingInfo info = createRequestMappingInfo(method);
+    if (info != null) {
+        RequestMappingInfo typeInfo = createRequestMappingInfo(handlerType);
+        if (typeInfo != null) {
+            info = typeInfo.combine(info);
+        }
+    }
+    return info;
 }
 ```
 
@@ -123,10 +123,10 @@ protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handler
 
 ```java
 private RequestMappingInfo createRequestMappingInfo(AnnotatedElement element) {
-	RequestMapping requestMapping = AnnotatedElementUtils.findMergedAnnotation(element, RequestMapping.class);
-	RequestCondition<?> condition = (element instanceof Class ?
-			getCustomTypeCondition((Class<?>) element) : getCustomMethodCondition((Method) element));
-	return (requestMapping != null ? createRequestMappingInfo(requestMapping, condition) : null);
+    RequestMapping requestMapping = AnnotatedElementUtils.findMergedAnnotation(element, RequestMapping.class);
+    RequestCondition<?> condition = (element instanceof Class ?
+            getCustomTypeCondition((Class<?>) element) : getCustomMethodCondition((Method) element));
+    return (requestMapping != null ? createRequestMappingInfo(requestMapping, condition) : null);
 }
 ```
 
@@ -134,17 +134,17 @@ private RequestMappingInfo createRequestMappingInfo(AnnotatedElement element) {
 
 ```java
 public RequestMappingInfo combine(RequestMappingInfo other) {
-	String name = combineNames(other);
-	PatternsRequestCondition patterns = this.patternsCondition.combine(other.patternsCondition);
-	RequestMethodsRequestCondition methods = this.methodsCondition.combine(other.methodsCondition);
-	ParamsRequestCondition params = this.paramsCondition.combine(other.paramsCondition);
-	HeadersRequestCondition headers = this.headersCondition.combine(other.headersCondition);
-	ConsumesRequestCondition consumes = this.consumesCondition.combine(other.consumesCondition);
-	ProducesRequestCondition produces = this.producesCondition.combine(other.producesCondition);
-	RequestConditionHolder custom = this.customConditionHolder.combine(other.customConditionHolder);
+    String name = combineNames(other);
+    PatternsRequestCondition patterns = this.patternsCondition.combine(other.patternsCondition);
+    RequestMethodsRequestCondition methods = this.methodsCondition.combine(other.methodsCondition);
+    ParamsRequestCondition params = this.paramsCondition.combine(other.paramsCondition);
+    HeadersRequestCondition headers = this.headersCondition.combine(other.headersCondition);
+    ConsumesRequestCondition consumes = this.consumesCondition.combine(other.consumesCondition);
+    ProducesRequestCondition produces = this.producesCondition.combine(other.producesCondition);
+    RequestConditionHolder custom = this.customConditionHolder.combine(other.customConditionHolder);
 
-	return new RequestMappingInfo(name, patterns,
-			methods, params, headers, consumes, produces, custom.getCondition());
+    return new RequestMappingInfo(name, patterns,
+            methods, params, headers, consumes, produces, custom.getCondition());
 }
 ```
 
@@ -160,17 +160,17 @@ public RequestMappingInfo combine(RequestMappingInfo other) {
 
 ```java
 protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
-	for (HandlerMapping hm : this.handlerMappings) {
-		if (logger.isTraceEnabled()) {
-			logger.trace(
-					"Testing handler map [" + hm + "] in DispatcherServlet with name '" + getServletName() + "'");
-		}
-		HandlerExecutionChain handler = hm.getHandler(request);
-		if (handler != null) {
-			return handler;
-		}
-	}
-	return null;
+    for (HandlerMapping hm : this.handlerMappings) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(
+                    "Testing handler map [" + hm + "] in DispatcherServlet with name '" + getServletName() + "'");
+        }
+        HandlerExecutionChain handler = hm.getHandler(request);
+        if (handler != null) {
+            return handler;
+        }
+    }
+    return null;
 }
 ```
 
@@ -178,27 +178,27 @@ protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Ex
 
 ```java
 public final HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
-	Object handler = getHandlerInternal(request);
-	if (handler == null) {
-		handler = getDefaultHandler();
-	}
-	if (handler == null) {
-		return null;
-	}
-	// Bean name or resolved handler?
-	if (handler instanceof String) {
-		String handlerName = (String) handler;
-		handler = getApplicationContext().getBean(handlerName);
-	}
+    Object handler = getHandlerInternal(request);
+    if (handler == null) {
+        handler = getDefaultHandler();
+    }
+    if (handler == null) {
+        return null;
+    }
+    // Bean name or resolved handler?
+    if (handler instanceof String) {
+        String handlerName = (String) handler;
+        handler = getApplicationContext().getBean(handlerName);
+    }
 
-	HandlerExecutionChain executionChain = getHandlerExecutionChain(handler, request);
-	if (CorsUtils.isCorsRequest(request)) {
-		CorsConfiguration globalConfig = this.corsConfigSource.getCorsConfiguration(request);
-		CorsConfiguration handlerConfig = getCorsConfiguration(handler, request);
-		CorsConfiguration config = (globalConfig != null ? globalConfig.combine(handlerConfig) : handlerConfig);
-		executionChain = getCorsHandlerExecutionChain(request, executionChain, config);
-	}
-	return executionChain;
+    HandlerExecutionChain executionChain = getHandlerExecutionChain(handler, request);
+    if (CorsUtils.isCorsRequest(request)) {
+        CorsConfiguration globalConfig = this.corsConfigSource.getCorsConfiguration(request);
+        CorsConfiguration handlerConfig = getCorsConfiguration(handler, request);
+        CorsConfiguration config = (globalConfig != null ? globalConfig.combine(handlerConfig) : handlerConfig);
+        executionChain = getCorsHandlerExecutionChain(request, executionChain, config);
+    }
+    return executionChain;
 }
 ```
 
@@ -206,26 +206,26 @@ public final HandlerExecutionChain getHandler(HttpServletRequest request) throws
 
 ```java
 protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Exception {
-	String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
-	if (logger.isDebugEnabled()) {
-		logger.debug("Looking up handler method for path " + lookupPath);
-	}
-	this.mappingRegistry.acquireReadLock();
-	try {
-		HandlerMethod handlerMethod = lookupHandlerMethod(lookupPath, request);
-		if (logger.isDebugEnabled()) {
-			if (handlerMethod != null) {
-				logger.debug("Returning handler method [" + handlerMethod + "]");
-			}
-			else {
-				logger.debug("Did not find handler method for [" + lookupPath + "]");
-			}
-		}
-		return (handlerMethod != null ? handlerMethod.createWithResolvedBean() : null);
-	}
-	finally {
-		this.mappingRegistry.releaseReadLock();
-	}
+    String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
+    if (logger.isDebugEnabled()) {
+        logger.debug("Looking up handler method for path " + lookupPath);
+    }
+    this.mappingRegistry.acquireReadLock();
+    try {
+        HandlerMethod handlerMethod = lookupHandlerMethod(lookupPath, request);
+        if (logger.isDebugEnabled()) {
+            if (handlerMethod != null) {
+                logger.debug("Returning handler method [" + handlerMethod + "]");
+            }
+            else {
+                logger.debug("Did not find handler method for [" + lookupPath + "]");
+            }
+        }
+        return (handlerMethod != null ? handlerMethod.createWithResolvedBean() : null);
+    }
+    finally {
+        this.mappingRegistry.releaseReadLock();
+    }
 }
 ```
 
@@ -235,67 +235,83 @@ protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Ex
 
 ```java
 protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
-	List<Match> matches = new ArrayList<Match>();
-	List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
-	if (directPathMatches != null) {
-		addMatchingMappings(directPathMatches, matches, request);
-	}
-	if (matches.isEmpty()) {
-		// No choice but to go through all mappings...
-		addMatchingMappings(this.mappingRegistry.getMappings().keySet(), matches, request);
-	}
+    List<Match> matches = new ArrayList<Match>();
+    List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
+    if (directPathMatches != null) {
+        addMatchingMappings(directPathMatches, matches, request);
+    }
+    if (matches.isEmpty()) {
+        // No choice but to go through all mappings...
+        addMatchingMappings(this.mappingRegistry.getMappings().keySet(), matches, request);
+    }
 
-	if (!matches.isEmpty()) {
-		Comparator<Match> comparator = new MatchComparator(getMappingComparator(request));
-		Collections.sort(matches, comparator);
-		if (logger.isTraceEnabled()) {
-			logger.trace("Found " + matches.size() + " matching mapping(s) for [" +
-					lookupPath + "] : " + matches);
-		}
-		Match bestMatch = matches.get(0);
-		if (matches.size() > 1) {
-			if (CorsUtils.isPreFlightRequest(request)) {
-				return PREFLIGHT_AMBIGUOUS_MATCH;
-			}
-			Match secondBestMatch = matches.get(1);
-			if (comparator.compare(bestMatch, secondBestMatch) == 0) {
-				Method m1 = bestMatch.handlerMethod.getMethod();
-				Method m2 = secondBestMatch.handlerMethod.getMethod();
-				throw new IllegalStateException("Ambiguous handler methods mapped for HTTP path '" +
-						request.getRequestURL() + "': {" + m1 + ", " + m2 + "}");
-			}
-		}
-		handleMatch(bestMatch.mapping, lookupPath, request);
-		return bestMatch.handlerMethod;
-	}
-	else {
-		return handleNoMatch(this.mappingRegistry.getMappings().keySet(), lookupPath, request);
-	}
+    if (!matches.isEmpty()) {
+        Comparator<Match> comparator = new MatchComparator(getMappingComparator(request));
+        Collections.sort(matches, comparator);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Found " + matches.size() + " matching mapping(s) for [" +
+                    lookupPath + "] : " + matches);
+        }
+        Match bestMatch = matches.get(0);
+        if (matches.size() > 1) {
+            if (CorsUtils.isPreFlightRequest(request)) {
+                return PREFLIGHT_AMBIGUOUS_MATCH;
+            }
+            Match secondBestMatch = matches.get(1);
+            if (comparator.compare(bestMatch, secondBestMatch) == 0) {
+                Method m1 = bestMatch.handlerMethod.getMethod();
+                Method m2 = secondBestMatch.handlerMethod.getMethod();
+                throw new IllegalStateException("Ambiguous handler methods mapped for HTTP path '" +
+                        request.getRequestURL() + "': {" + m1 + ", " + m2 + "}");
+            }
+        }
+        handleMatch(bestMatch.mapping, lookupPath, request);
+        return bestMatch.handlerMethod;
+    }
+    else {
+        return handleNoMatch(this.mappingRegistry.getMappings().keySet(), lookupPath, request);
+    }
 }
 ```
 
 调用`mappingRegistry.getMappingsByUrl`从`mappingRegistry`中获取请求路径对应的`RequestMappingInfo`。然后调用`addMatchingMappings`获取请求路径对应的`Match`列表，这个列表中包含`RequestMappingInfo`以及对应的`HandlerMethod`。经过对其中`RequestMappingInfo`的排序，获得一个最佳的匹配(如果第一个匹配和第二个匹配是相同的话，抛出异常)，返回其中的`HandlerMethod`。
 
+### addMatchingMappings方法
+
+`addMatchingMappings`方法的功能就是遍历所有的请求映射关系，寻找所有匹配请求路径的方法。调用流程如下：
+
+1. RequestMappingInfoHandlerMapping.getMatchingMapping
+2. RequestMappingInfo.getMatchingConditon
+
+`RequestMappingInfo.getMatchingConditon`方法中调用`PatternsRequestConditon.getMatchingConditon`检查请求路径与Mapping中的映射路径规则是否匹配，调用流程如下：
+
+1. PatternsRequestCondition.getMatchingPatterns
+2. PatternsRequestCondition.getMatchingPattern
+3. AntPathMatcher.match
+
+可以看到路径的匹配检查调用的是`AntPathMatcher.match`方法。
+
+
 回到`getHandler`方法。通过`getHandlerInternal`方法获得请求对应的`HandlerMethod`之后，再调用`getHandlerExecutionChain`方法获得`HandlerExecutionChain`：
 
 ```java
 protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpServletRequest request) {
-	HandlerExecutionChain chain = (handler instanceof HandlerExecutionChain ?
-			(HandlerExecutionChain) handler : new HandlerExecutionChain(handler));
+    HandlerExecutionChain chain = (handler instanceof HandlerExecutionChain ?
+            (HandlerExecutionChain) handler : new HandlerExecutionChain(handler));
 
-	String lookupPath = this.urlPathHelper.getLookupPathForRequest(request);
-	for (HandlerInterceptor interceptor : this.adaptedInterceptors) {
-		if (interceptor instanceof MappedInterceptor) {
-			MappedInterceptor mappedInterceptor = (MappedInterceptor) interceptor;
-			if (mappedInterceptor.matches(lookupPath, this.pathMatcher)) {
-				chain.addInterceptor(mappedInterceptor.getInterceptor());
-			}
-		}
-		else {
-			chain.addInterceptor(interceptor);
-		}
-	}
-	return chain;
+    String lookupPath = this.urlPathHelper.getLookupPathForRequest(request);
+    for (HandlerInterceptor interceptor : this.adaptedInterceptors) {
+        if (interceptor instanceof MappedInterceptor) {
+            MappedInterceptor mappedInterceptor = (MappedInterceptor) interceptor;
+            if (mappedInterceptor.matches(lookupPath, this.pathMatcher)) {
+                chain.addInterceptor(mappedInterceptor.getInterceptor());
+            }
+        }
+        else {
+            chain.addInterceptor(interceptor);
+        }
+    }
+    return chain;
 }
 ```
 
@@ -307,16 +323,16 @@ protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpSer
 
 ```java
 protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
-	for (HandlerAdapter ha : this.handlerAdapters) {
-		if (logger.isTraceEnabled()) {
-			logger.trace("Testing handler adapter [" + ha + "]");
-		}
-		if (ha.supports(handler)) {
-			return ha;
-		}
-	}
-	throw new ServletException("No adapter for handler [" + handler +
-			"]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
+    for (HandlerAdapter ha : this.handlerAdapters) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Testing handler adapter [" + ha + "]");
+        }
+        if (ha.supports(handler)) {
+            return ha;
+        }
+    }
+    throw new ServletException("No adapter for handler [" + handler +
+            "]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
 }
 ```
 
@@ -334,33 +350,33 @@ protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletExcepti
 
 ```java
 public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,
-			Object... providedArgs) throws Exception {
+            Object... providedArgs) throws Exception {
 
-	Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
-	setResponseStatus(webRequest);
+    Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+    setResponseStatus(webRequest);
 
-	if (returnValue == null) {
-		if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
-			mavContainer.setRequestHandled(true);
-			return;
-		}
-	}
-	else if (StringUtils.hasText(getResponseStatusReason())) {
-		mavContainer.setRequestHandled(true);
-		return;
-	}
+    if (returnValue == null) {
+        if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
+            mavContainer.setRequestHandled(true);
+            return;
+        }
+    }
+    else if (StringUtils.hasText(getResponseStatusReason())) {
+        mavContainer.setRequestHandled(true);
+        return;
+    }
 
-	mavContainer.setRequestHandled(false);
-	try {
-		this.returnValueHandlers.handleReturnValue(
-				returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
-	}
-	catch (Exception ex) {
-		if (logger.isTraceEnabled()) {
-			logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
-		}
-		throw ex;
-	}
+    mavContainer.setRequestHandled(false);
+    try {
+        this.returnValueHandlers.handleReturnValue(
+                returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
+    }
+    catch (Exception ex) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
+        }
+        throw ex;
+    }
 }
 ```
 
@@ -368,13 +384,13 @@ public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer 
 
 ```java
 public void handleReturnValue(Object returnValue, MethodParameter returnType,
-		ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+        ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
 
-	HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
-	if (handler == null) {
-		throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
-	}
-	handler.handleReturnValue(returnValue, returnType, mavContainer, webRequest);
+    HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
+    if (handler == null) {
+        throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
+    }
+    handler.handleReturnValue(returnValue, returnType, mavContainer, webRequest);
 }
 ```
 
