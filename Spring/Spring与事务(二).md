@@ -169,18 +169,39 @@ if (specificInterceptors != DO_NOT_PROXY) {
 }
 ```
 
+### 寻找拦截器
+
+Spring通过调用`AbstractAdvisorAutoProxyCreator.getAdvicesAndAdvisorsForBean`方法来获取某个bean的所有advice。它实际调用的是`AbstractAdvisorAutoProxyCreator.findEligibleAdvisors`方法，为这个类寻找合适的advice。主要流程如下：
+
+1. 调用`AbstractAdvisorAutoProxyCreator.findCandidateAdvisors()`方法寻找所有的advisor。其中会在Spring容器里寻找名称为`org.springframework.transaction.config.internalTransactionAdvisor`的bean对象，返回的是一个`BeanFactoryTransactionAttributeSourseAdvisor`类对象，它用于在一个使用事务的方法中加入事务通知。
+2. 调用`AbstractAdvisorAutoProxyCreator.findAdvisorsThatCanApply()`方法在所有advisor中筛选适合这个类对象的advisor。
+
+    它实际调用的是`AopUtils.canApply`方法来确定advisor的pointcut是否能匹配这个类对象，原理如下：
+    
+    1. 调用Pointcut的`getMethodMatcher`方法获取`MethodMatcher`对象。该对象是Pointcut的一部分，用于判断目标方法是否匹配advice。
+    2. 获取目标对象的所有的方法，然后遍历这些方法，调用`BeanFactoryTransactionAttributeSourseAdvisor`父类`TransactionAttributeSourcePointcut`的`matches`方法来判断目标方法是否匹配Pointcut。其原理是通过是否能在目标方法的注释中找到事务属性(TransactionAttribute)来判断是否匹配Pointcut。
+
+### 创建代理类
+
 通过`getAdvicesAndAdvisorsForBean`方法找到一个拦截器`BeanFactoryTransactionAttributeSourceAdvisor`。因此需要创建一个代理类：
 
 1. 调用`DefaultAopProxyFactory.createAopProxy`来创建一个AopProxy
 2. 调用`CglibAopProxy.getProxy`来获取一个代理类
 
+代理类中加入了`DynamicAdvisedInterceptor`、`StaticUnadvisedInterceptor`、`SerializableNoOp`、`StaticDispatcher`、`AdvisedDispatcher`、`EqualsInterceptor`、`HashCodeInterceptor`等一系列的拦截器。
+
 ## 执行@Transactional注释的方法
 
-当调用@Transactional注释的方法时，调用的是`CglibAopProxy.intercept`。
+当调用@Transactional注释的方法时，调用的是`DynamicAdvisedInterceptor.intercept`。
 
-首先执行`this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass)`，获取到的拦截器链中有`TransactionInterceptor`。
+首先执行`AdvisedSupport.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass)`获取拦截器列表。调用流程如下：
 
-执行`ReflectiveMethodInvocation.proceed`
+1. DefaultAdvisorChainFactory.getInterceptorsAndDynamicInterceptionAdvice
+2. DefaultAdvisorAdapterRegistry.getInterceptors方法返回TransactionInterceptor
+
+获取到的拦截器链中有`TransactionInterceptor`。
+
+接着新建`CglibMethodInvocation`对象，执行`ReflectiveMethodInvocation.proceed`方法
 
 ```java
 public Object proceed() throws Throwable {
@@ -213,7 +234,7 @@ public Object proceed() throws Throwable {
 }
 ```
 
-`interceptorOrInterceptionAdvice`中获得的拦截器是`TransactionInterceptor`，然后执行到`((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this)`语句，进入`TransactionInterceptor.invoke`，然后进入`TransactionAspectSupport.invokeWithinTransaction`。
+其中`interceptorOrInterceptionAdvice`中获得的拦截器是`TransactionInterceptor`，然后执行到`((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this)`语句，进入`TransactionInterceptor.invoke`，然后进入`TransactionAspectSupport.invokeWithinTransaction`。
 
 ```java
 ...
