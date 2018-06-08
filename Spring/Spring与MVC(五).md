@@ -180,7 +180,7 @@ private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parame
 2. 调用`getNativeRequest`
 3. 调用`ServletWebRequest.getParameterValues`获取相应名称的参数值
     
-    `ServletWebRequest.getParameterValues`的调用流程：
+    `ServletWebRequest.getParameterValues`的调用流程：
     
     1. RequestFacade.getParameterValues
     2. Request.getParameterValues(String name)，根据参数名称获取参数值
