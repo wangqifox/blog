@@ -10,7 +10,13 @@ date: 2018/01/24 18:47:00
 
 ## 处理方法参数
 
-请求首先被`DispatcherServlet`截获，通过`handlerMapping`获得`HandlerExecutionChain`，然后获得`HandlerAdapter`。`RequestMappingHandlerAdapter`调用`invokeHandlerMethod`方法执行用户的方法。在`invokeHandlerMethod`中对于每个请求都会实例化一个`ServletInvocableHandlerMethod`，然后调用`invokeAndHandle`方法进行处理，它会分别对请求跟响应进行处理：
+请求首先被`DispatcherServlet`截获，通过`handlerMapping`获得`HandlerExecutionChain`，然后调用`getHandlerAdapter()`方法获得`HandlerAdapter`。通过`HandlerAdapter`来调用用户定义的handler，调用流程如下：
+
+1. AbstractHandlerMethodAdapter.handle
+2. RequestMappingHandlerAdapter.handleInternal
+3. RequestMappingHandlerAdapter.invokeHandlerMethod
+
+`RequestMappingHandlerAdapter.invokeHandlerMethod`方法执行用户的方法。其中对于每个请求都会实例化一个`ServletInvocableHandlerMethod`，然后调用`invokeAndHandle`方法进行处理，它会分别对请求跟响应进行处理：
 
 ```java
 public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,
@@ -161,10 +167,36 @@ private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parame
 
 首先参数解析器选择的是`RequestParamMethodArgumentResolver`，看一下它的`resolveArgument`方法的主流程是如何工作的：
 
-1. 调用`getNamedValueInfo`从`@RequestParam`注释中获取参数的名称
-2. 调用`resolveStringValue`解析参数名称中可能存在占位符、表达式
-3. 调用`resolveName`从request中获取参数的值
+1. 调用`AbstractNamedValueMethodArgumentResolver.getNamedValueInfo`从`@RequestParam`注释中获取参数的名称
+2. 调用`AbstractnamedValueMethodArgumentResolver.resolveStringValue`解析参数名称中可能存在占位符、表达式
+3. 调用`RequestParamMethodArgumentResolver.resolveName`从request中获取参数的值
 4. 参数值再经过`WebDataBinder`的转化
+
+#### RequestParamMethodArgumentResolver.resolveName
+
+`RequestParamMethodArgumentResolver.resolveName`的调用流程如下：
+
+1. 调用`MultipartResolutionDelegate.resolveMultipartArgument`处理文件上传的情况
+2. 调用`getNativeRequest`
+3. 调用`ServletWebRequest.getParameterValues`获取相应名称的参数值
+    
+    `ServletWebRequest.getParameterValues`的调用流程：
+    
+    1. RequestFacade.getParameterValues
+    2. Request.getParameterValues(String name)，根据参数名称获取参数值
+
+#### 参数转化
+
+// TODO
+
+### @RequestHeader
+
+看一下被`@RequestHeader`注释的参数如何被解析。
+
+首先参数解析器选择的是`RequestHeaderMapMethodArgumentResolver`，看一下它的`resolveArgument`方法的主流程是如何工作的：
+
+1. 如果参数的类型是`MultiValueMap`的子类，遍历请求中的header，将header添加到`HttpHeaders`中
+2. 否则，遍历请求中的header，将header添加到`LinkedHashMap`中
 
 ### @PathVariable
 
@@ -172,7 +204,9 @@ private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parame
 
 首先参数解析器选择的是`PathVariableMethodArgumentResolver`，看一下它的`resolveArgument`方法的主流程是如何工作的。
 
-它的流程和`RequestParamMethodArgumentResolver`是一致的，因为它们调用的都是`AbstractNamedValueMethodArgumentResolver`父类的`resolveArgument`方法。唯一不同的是`resolveName`方法：
+它的流程和`RequestParamMethodArgumentResolver`是一致的，因为它们调用的都是`AbstractNamedValueMethodArgumentResolver`父类的`resolveArgument`方法。唯一不同的是`resolveName`方法。
+
+#### PathVariableMethodArgumentResolver.resolveName
 
 `resolveName`方法从request的多个属性中获取`org.springframework.web.servlet.HandlerMapping.uriTemplateVariables`属性，然后从中获取参数的值。
 
@@ -184,6 +218,34 @@ decodedUriVariables = getUrlPathHelper().decodePathVariables(request, uriVariabl
 ```
 
 `extractUriTemplateVariables`函数根据模板(bestPattern)和请求的路径(lookupPath)获得路径中参数与值的映射表。
+
+### @RequestBody
+
+看一下被`@RequestBody`注释的参数如何被解析。
+
+首先参数解析器选择的是`RequestResponseBodyMethodProcessor`，看一下它的`resolveArgument`方法的主流程是如何工作的。
+
+1. 调用`RequestResponseBodyMethodProcessor.readWithMessageConverters`获取参数数据，它实际调用的是`AbstractMessageConverterMethodArgumentResolver.readWithMessageConverters`方法
+2. 参数值再经过`WebDataBinder`的转化
+
+#### AbstractMessageConverterMethodArgumentResolver.readWithMessageConverters
+
+`AbstractMessageConverterMethodArgumentResolver.readWithMessageConverters`的功能是选用合适的消息转换器(MessageConverter)将数据转换成参数需要的类型，候选的消息转换器有一下10种：
+
+1. ByteArrayHttpMessageConverter（支持byte[]类型）
+2. StringHttpMessageConverter（defaultCharset="UTF-8"）（支持String类型）
+3. StringHttpMessageConverter（defaultCharset="ISO-8859-1"）（支持String类型）
+4. ResourceHttpMessageConverter（支持Resource类型的子类）
+5. ResourceRegionHttpMessageConverter
+6. SourceHttpMessageConverter（支持javax.xml.transform.stax.StAXSource, javax.xml.transform.dom.DOMSource, javax.xml.transform.stream.StreamSource, javax.xml.transform.sax.SAXSource, javax.xml.transform.Source）
+7. AllEncompassingFormHttpMessageConverter（支持MultiValueMap的子类）
+8. MappingJackson2HttpMessageConverter（mediaType是`application/json`和`application/*+json`其中之一，且参数是Jackson的ObjectMapper可以反序列化的类型。）
+9. MappingJackson2HttpMessageConverter
+10. Jaxb2RootElementHttpMessageConverter（参数带着@XmlRootElement注释，或者带着@XmlType。并且mediaType是受支持的）
+
+#### 参数转化
+
+// TODO
 
 ### 绑定对象
 

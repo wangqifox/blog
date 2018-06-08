@@ -231,7 +231,7 @@ protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Ex
 
 首先调用`getLookupPathForRequest`方法获取这个request请求的路径。
 
-然后调用`lookupHandlerMethod`方法寻找`HandlerMethod`：
+然后调用`AbstractHandlerMethodMapping.lookupHandlerMethod`方法寻找`HandlerMethod`：
 
 ```java
 protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
@@ -274,7 +274,11 @@ protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletReques
 }
 ```
 
-调用`mappingRegistry.getMappingsByUrl`从`mappingRegistry`中获取请求路径对应的`RequestMappingInfo`。然后调用`addMatchingMappings`获取请求路径对应的`Match`列表，这个列表中包含`RequestMappingInfo`以及对应的`HandlerMethod`。经过对其中`RequestMappingInfo`的排序，获得一个最佳的匹配(如果第一个匹配和第二个匹配是相同的话，抛出异常)，返回其中的`HandlerMethod`。
+调用`mappingRegistry.getMappingsByUrl`从`mappingRegistry`中获取请求路径对应的`RequestMappingInfo`。
+
+然后调用`addMatchingMappings`获取请求路径对应的`Match`列表，这个列表中包含`RequestMappingInfo`以及对应的`HandlerMethod`。
+
+经过对其中`RequestMappingInfo`的排序，获得一个最佳的匹配(如果第一个匹配和第二个匹配是相同的话，抛出异常)，返回其中的`HandlerMethod`。
 
 ### addMatchingMappings方法
 
