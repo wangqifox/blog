@@ -1,6 +1,6 @@
 ---
 title: InputStream转成Byte数组
-data: 2018/03/12 18:13:00
+date: 2018/03/12 18:13:00
 ---
 
 本文介绍三种将InputStream转成Byte数组的方法：
