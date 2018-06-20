@@ -241,7 +241,11 @@ typeHandlerRegistry.setDefaultEnumTypeHandler(AutoEnumTypeHandler.class);
 
 如果使用的是mybatis plus，则需要在配置文件中指定typeHandler所在的包：`mybatis-plus.type-handlers-package`。并且不再需要`AutoEnumTypeHandler`，mybatis plus会根据枚举类型选择合适的类型转换器。
 
+## 与前端交互
 
+经过以上处理，我们实现了枚举类型到数据库数据的相互转化。我们还需要使用枚举类型与前端进行交互，这部分详见[Jackson枚举类处理][1]
+
+[1]: /articles/Java/Jackson枚举类处理.html
 
 > https://segmentfault.com/a/1190000010755321
 
