@@ -3,6 +3,53 @@ title: ThreadPoolExecutor
 date: 2018/01/13 15:33:25
 ---
 
+在web开发中，服务器需要接受并处理请求，所以会为一个请求来分配一个线程来进行处理。如果每次请求都新创建一个线程的话实现起来非常简单，但是存在一个问题：
+
+如果并发的请求数量非常多，但每个线程执行的时间很短，这样就会频繁地创建和销毁线程，如此一来会大大降低系统的效率。可能出现服务器为每个请求创建新线程和销毁线程上花费的时间和消耗的系统资源要比处理实际的用户请求的时间和资源更多。
+
+那么有没有一种办法使执行完一个任务，并不被销毁，而是可以继续执行其他的任务呢？
+
+这就是线程池的目的了。线程池为线程生命周期的开销和资源不足问题提供了解决方案。通过对多个任务重用线程，线程创建的开销被分摊到了多个任务上。
+
+什么时候使用线程池？
+
+- 单个任务处理时间比较短
+- 需要处理的任务数量很大
+
+使用线程池的好处：
+
+- 降低资源消耗。通过重复利用已创建的线程降低线程创建和销毁造成的消耗
+- 提高响应速度。当任务到达时，任务可以不需要等到线程创建就能立即执行
+- 提高线程的可管理性。线程时稀缺资源，如果无限制地创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
+
+## Executor框架接口
+
+Executor框架是一个根据一组执行策略调动，调度，执行和控制的异步任务的框架，目的是提供一种将“任务提交”与“任务如何运行”分离开来的机制。
+
+JUC中有三个Executor接口：
+
+- Executor：一个运行新任务的简单接口
+- ExecutorService：扩展了Executor接口。添加了一些用来管理执行器生命周期和任务生命周期的方法
+- ScheduledExecutorService：扩展了ExecutorService。支持Future和定期执行任务。
+
+### Executor接口
+
+```java
+public interface Executor {
+    void execute(Runnable command);
+}
+```
+
+Executor接口只有一个execute方法，用来替代通常创建或启动线程的方法。
+
+### ExecutorService接口
+
+ExecutorService接口继承自Executor接口，提供了管理终止的方法，以及可为跟踪一个或多个异步任务执行状况而生成的Future方法。增加了`shutDown()`、`shutDownNow()`、`invokeAll()`、`invokeAny()`、`submit()`等方法。
+
+### ScheduledExecutorService接口
+
+ScheduledExecutorService扩展ExecutorService接口并增加了schedule方法。调用schedule方法可以在指定的延时后执行一个Runnable或者Callable任务。ScheduledExecutorService接口还定义了按照指定时间间隔定期执行任务的`scheduleAtFixedRate()`方法和`scheduleWithFixedDelay()`方法。
+
 ## 几个重要的字段
 
 ```java
@@ -33,6 +80,12 @@ private static final int TERMINATED =  3 << COUNT_BITS;
     - workerCount为0；
     - 设置TIDYING状态成功。
 <!--more-->
+
+下图为线程池的状态转换过程：
+
+![threadpool-status](media/threadpool-status.png)
+
+
 ctl相关方法
 
 ```java
@@ -53,20 +106,48 @@ public void execute(Runnable command) {
         throw new NullPointerException();
     
     int c = ctl.get();
+    // 如果当前活动线程数小于corePoolSize，则新建一个线程放入线程池中。并把任务添加到该线程中
     if (workerCountOf(c) < corePoolSize) {
+        /**
+         * addWorker中的第二个参数表示限制添加线程的数量是根据corePoolSize来判断还是maximumPoolSize来判断
+         * 如果为true，根据corePoolSize来判断
+         * 如果为false，根据maximumPoolSize来判断
+         */
         if (addWorker(command, true))
             return;
+        // 如果添加失败，则重新获取ctl值
         c = ctl.get();
     }
-    // 如果能插入数据，offer返回true；否则offer返回false
+    /**
+     * 如果当前线程池是运行状态并且任务添加到队列成功
+     * 如果能插入数据，offer返回true；否则offer返回false
+     */
     if (isRunning(c) && workQueue.offer(command)) {
         int recheck = ctl.get();
+        /**
+         * 再次判断线程池的运行状态
+         * 如果不是运行状态，由于之前已经把command添加到workQueue中了，这时需要移除该command
+         * 执行过后通过handler使用使用拒绝策略对该任务进行处理，整个方法返回
+         */
         if (! isRunning(recheck) && remove(command))
             reject(command);
-        // 如果执行线程为0，要增加一个执行线程，保证有一个线程来执行任务
+        /**
+         * 如果执行线程为0，要增加一个执行线程，保证有一个线程来执行任务
+         * 这里传入的参数标识：
+         * 1. 第一个参数为null，表示在线程池中创建一个线程，但不去启动
+         * 2. 第二个参数为false，将线程池的有效线程数量的上限设置为maximumPoolSize，添加线程时根据maximumPoolSize来判断
+         * 如果执行线程数大于0，则直接返回，在workQueue中新增的command会在将来的某个时刻被执行
+         */
         else if (workerCountOf(recheck) == 0)
             addWorker(null, false);
     }
+    /**
+     * 如果执行到这里，有两种情况：
+     * 1. 线程池已经不是RUNNING状态
+     * 2. 线程池是RUNNING状态，但workerCount >= corePoolSize并且workQueue已满
+     * 这是，再次调用addWorker方法，但第二个参数传入为false，将线程池的有效线程数量的上限设置为maximumPoolSize
+     * 如果失败则拒绝该任务
+     */
     else if (!addWorker(command, false))
         reject(command);
 }
@@ -80,6 +161,11 @@ public void execute(Runnable command) {
         2. 如果`workerCount >= maximumPoolSize`，则根据拒绝策略来处理该任务，默认的处理方式是直接抛出异常
 
 这里需要注意一下`addWorker(null, false)`也就是创建一个线程，但并没有传入任务，因为任务已经被添加到workQueue中了，所以worker在执行的时候，会直接从workerQueue中获取任务。所以在`workerCountOf(recheck) == 0`时执行`addWorker(null, false)`也是为了保证线程池在RUNNING状态下必须有一个线程来执行任务。
+
+execute方法执行流程如下：
+
+![executo](media/executor.png)
+
 
 ## addWorker
 
@@ -177,6 +263,8 @@ private boolean addWorker(Runnable firstTask, boolean core) {
 
 ## Worker类
 
+线程池中的每一个线程被封装成一个Worker对象，ThreadPool维护的其实就是一组Worker对象。
+
 ```java
 private final class Worker extends AbstractQueuedSynchronizer implements Runnable {
     private static final long serialVersionUID = 6138294804551838833L;
@@ -262,6 +350,8 @@ tryAcquire方法是根据state是否是0来判断的，所以，setState(-1);将
 
 ## runWorker
 
+在Worker类中的run方法调用了runWorker方法来执行任务，runWorker方法的代码如下：
+
 ```java
 final void runWorker(Worker w) {
     Thread wt = Thread.currentThread();
@@ -332,6 +422,8 @@ STOP状态要中断线程池中的所有线程，而这里使用Thread.interrupt
 completedAbruptly变量来表示在执行任务过程中是否出现了异常，在processWorkerExit方法中会对该变量的值进行判断。
 
 ## getTask
+
+getTask方法用来从阻塞队列中获取任务
 
 ```java
 private Runnable getTask() {
@@ -448,6 +540,11 @@ private void processWorkerExit(Worker w, boolean completedAbruptly) {
 }
 ```
 
+至此，processWorkerExit执行完之后，工作线程被销毁，以上就是整个工作线程的生命周期，从execute方法开始，Worker使用ThreadFactory创建新的工作线程，runWorker通过getTask获取任务，然后执行任务，如果getTask返回null，进入processWorkerExit方法，整个线程结束：
+
+![threadpool-lifecycle](media/threadpool-lifecycle.png)
+
+
 ## tryTerminate
 
 tryTerminate方法根据线程池状态进行判断是否结束线程池
@@ -499,6 +596,8 @@ final void tryTerminate() {
 `interruptIdleWorkers(ONLY_ONE)`的作用是因为在getTask方法中执行`workQueue.take()`时，如果不执行中断会一直阻塞。在下面介绍的shutdown方法中，会中断所有空闲的工作线程，如果在执行shutdown时工作线程没有空闲，然后又去调用了getTask方法，这时如果workQueue中没有任务了，调用`workQueue.take()`时就会一直阻塞。所以每次在工作线程结束时调用tryTerminate方法来尝试中断一个空闲工作线程，避免在队列为空时取任务一直阻塞的情况。
 
 ## shutdown
+
+shutdown方法要将线程池切换到SHUTDOWN状态，并调用interruptIdleWorkers方法请求中断所有空闲的worker，最后调用tryTerminate尝试结束线程池。
 
 ```java
 public void shutdown() {
