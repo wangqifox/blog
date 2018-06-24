@@ -32,24 +32,34 @@ private transient Node lastWaiter;
 public final void await() throws InterruptedException {
     if (Thread.interrupted())
         throw new InterruptedException();
+    // 根据当前线程创建一个Node添加到Condition队列中
     Node node = addConditionWaiter();
+    // 释放当前线程的lock，从AQS的队列中移除
     int savedState = fullyRelease(node);
     int interruptMode = 0;
+    // 循环判断当前线程的Node是否在Sync队列中，如果不在，则park
     while (!isOnSyncQueue(node)) {
         LockSupport.park(this);
+        // checkInterruptWhileWaiting方法根据中断发生的时机返回后续需要处理这次中断的方式，如果发生中断，退出循环
         if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
             break;
     }
+    // acquireQueued获取锁并返回线程是否中断
+    // 如果线程被中断，并且中断的方式不是抛出异常，则设置中断后续的处理方式为REINTERRUPT
     if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
         interruptMode = REINTERRUPT;
+    // 从头到尾遍历Condition队列，移除被cancel的节点
     if (node.nextWaiter != null) // clean up if cancelled
         unlinkCancelledWaiters();
+    // 如果线程已经被中断，则根据之前获取的interruptMode的值来判断是继续中断还是抛出异常
     if (interruptMode != 0)
         reportInterruptAfterWait(interruptMode);
 }
 ```
 
-首先调用addConditionWaiter在队列中增加一个等待节点：
+### addConditionWaiter
+
+首先调用addConditionWaiter在Condition队列中增加一个等待节点：
 
 ```java
 private Node addConditionWaiter() {
@@ -70,6 +80,8 @@ private Node addConditionWaiter() {
 ```
 
 根据当前线程创建一个Node并添加到Condition队列中。如果尾节点不是CONDITION状态(被取消)，调用`unlinkCancelledWaiters`方法删除Condition队列中被cancel的节点。然后将lastWaiter的nextWaiter设置为node，并将node设置为lastWaiter，即将其添加到链表的末尾。
+
+#### unlinkCancelledWaiters
 
 ```java
 private void unlinkCancelledWaiters() {
@@ -99,6 +111,7 @@ private void unlinkCancelledWaiters() {
 
 如果节点的状态是`CONDITION`，跳过该节点。
 
+### fullyRelease
 
 回到`await`方法，调用`addConditionWaiter`在队列中增加一个等待节点之后，接着调用`fullyRelease`：
 
@@ -120,7 +133,11 @@ final int fullyRelease(Node node) {
 }
 ```
 
-`fullyRelease`方法的功能是将当前AQS中持有的锁全部释放，接着调用`isOnSyncQueue`：
+`fullyRelease`方法的功能是将当前AQS中持有的锁全部释放。savedState表示当前线程已经加锁的次数(ReentrantLock为重入锁)。因为是可重入的原因，只有在state为0的时候才会真的释放锁，所以在fullRelease方法中，需要将之前加入的锁的次数全部释放，目的是将该线程从Sync队列中移出。
+
+### isOnSyncQueue
+
+接着循环调用`isOnSyncQueue`判断当前线程是否又被添加到了Sync队列中，如果已经在Sync队列中，则退出循环。什么时候会把当前线程又加入到Sync队列中呢？当然是调用signal方法的时候，因为这里需要唤醒之前调用await方法的线程。
 
 ```java
 final boolean isOnSyncQueue(Node node) {
@@ -134,7 +151,7 @@ final boolean isOnSyncQueue(Node node) {
 
 `isOnSyncQueue`方法判断当前线程的node是否在Sync队列中，即被唤醒加入到Sync队列中：
 
-1. 如果当前线程node的状态的CONDITION，或者`node.prev`为null时说明已经在Condition队列中了，所以返回false
+1. 如果当前线程node的状态为CONDITION，或者`node.prev`为null时说明已经在Condition队列中了，所以返回false
 2. 如果node.next不为null，说明在Sync队列中，返回true
 3. 如果两个if都未返回时，可以断定node的prev一定不为null，next一定为null，这个时候可以认为node正处于放入Sync队列的CAS操作的执行过程中。而这个CAS操作有可能失败，所以通过`findNodeFromTail`再尝试一次判断。
 
@@ -174,6 +191,8 @@ private Node enq(final Node node) {
 
 如果此时CAS还未成功，那只好返回false了。
 
+### checkInterruptWhileWaiting
+
 回到`await`方法，如果节点不在Sync队列中，则挂起线程。线程唤醒之后调用`checkInterruptWhileWaiting`方法检查是否被中断，如果中断再调用`transferAfterCancelledWait`方法判断后续的处理应该是抛出`InterruptedException`还是重新中断。
 
 ```java
@@ -205,35 +224,15 @@ final boolean transferAfterCancelledWait(Node node) {
 
 这里需要注意的地方是，如果第一次CAS失败了，则不能判断当前线程是先进行了中断还是先进行了signal方法的调用，可能是先执行了signal然后中断，也可能是先执行了中断，后执行了signal。当然，这两个操作肯定是发生在CAS之前。这时需要做的就是等待当前线程的node被添加到Sync队列后，也就是enq方法返回后，返回false告诉`checkInterruptWhileWaiting`方法返回`REINTERRUPT`，后续进行重新中断。
 
-简单来说，该方法的返回值代表当前线程是否在park的是否被中断唤醒，如果为true表示中断在signal调用之前，signal还未执行，否则表示signal已经执行过了。
+简单来说，该方法的返回值代表当前线程是否在park的时候被中断唤醒，如果为true表示中断在signal调用之前，signal还未执行，否则表示signal已经执行过了。
 
 回到`await`函数，`checkInterruptWhileWaiting`返回不为0(THROW_IE或者REINTERRUPT)说明遭遇中断，跳出循环。
 
 接着获取独占锁，如果node还有后节点则调用`unlinkCancelledWaiters`从头到尾遍历Condition队列，移除状态为非CONDITION的节点。
 
-```java
-private void unlinkCancelledWaiters() {
-    Node t = firstWaiter;
-    Node trail = null;
-    while (t != null) {
-        Node next = t.nextWaiter;
-        if (t.waitStatus != Node.CONDITION) {
-            t.nextWaiter = null;
-            if (trail == null)
-                firstWaiter = next;
-            else
-                trail.nextWaiter = next;
-            if (next == null)
-                lastWaiter = trail;
-        }
-        else
-            trail = t;
-        t = next;
-    }
-}
-```
-
 因为在执行该方法时已经获取了独占锁，所以不需要考虑多线程问题。
+
+### reportInterruptAfterWait
 
 如果当前线程被中断，则在`await`方法中调用`reportInterruptAfterWait`方法：
 
