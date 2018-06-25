@@ -176,6 +176,7 @@ final Node<K, V> helpTransfer(Node<K, V>[] tab, Node<K, V> f) {
     if (tab != null &&
             (f instanceof ForwardingNode) &&
             (nextTab = ((ForwardingNode<K, V>)f).nextTable) != null) {
+        // 新的table nextTable已经存在前提下才能帮助扩容
         int rs = resizeStamp(tab.length);
         while (nextTab == nextTable &&
                 table == tab &&
@@ -186,7 +187,7 @@ final Node<K, V> helpTransfer(Node<K, V>[] tab, Node<K, V> f) {
                     transferIndex <= 0)
                 break;
             if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1)) {
-                transfer(tab, nextTab);
+                transfer(tab, nextTab); // 调用扩容方法
                 break;
             }     
         }
@@ -196,16 +197,22 @@ final Node<K, V> helpTransfer(Node<K, V>[] tab, Node<K, V> f) {
 }
 ```
 
+`helpTransfer()`方法的目的就是调用多个工作线程一起帮助进行扩容，这样的效率会更高，而不是只有检查到要扩容的那个线程进行扩容操作，其他线程就要等待扩容操作完成才能工作。
+
 ### transfer方法
 
 ```java
 private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
     int n = tab.length, stride;
+    // NCPU为CPU核心数，每个核心均分复制任务，如果均分小于16个
+    // 那么以16为步长分给处理器：例如0-15号给处理器1，16-32号分给处理器2，处理器3就不用接任务了。
     if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
         stride = MIN_TRANSFER_STRIDE;
     if (nextTab == null) {
         try {
-            Node<K, V>[] nt = (Node<K, V>[])new Node<?, ?>[n << 1]; // 如果nextTab对象为空，则构建一个两倍长度的数组nextTab
+            // 如果nextTab对象为空，则构建一个两倍长度的数组nextTab
+            // 这里只会是单线程进的来，因为这初始化了nextTab，addCount里面判断了nextTab为空则不执行扩容任务
+            Node<K, V>[] nt = (Node<K, V>[])new Node<?, ?>[n << 1]; 
             nextTab = nt;
         } catch (Throwable ex) {
             sizeCtl = Integer.MAX_VALUE;
@@ -221,7 +228,7 @@ private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
     // 当advance == true时，表明该节点已经处理过了
     boolean advance = true;
     boolean finishing = false;
-    // 通过for循环处理每个槽位中的链表元素，默认advance为true，通过CAS设置transferIndex属性值，并初始化i和bound值，i指当前处理的槽位序号，bound值需要处理的槽位边界。
+    // 通过for循环处理每个槽位中的链表元素，默认advance为true，通过CAS设置transferIndex属性值，并初始化i和bound值，i指当前处理的槽位序号，bound指需要处理的槽位边界。
     for (int i = 0, bound = 0;;) {
         Node<K, V> f; int fh;
         while (advance) {
@@ -252,6 +259,7 @@ private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
                 sizeCtl = (n << 1) - (n >>> 1); // sizeCtl阈值为原来的1.5倍
                 return;
             }
+            // sizeCtl值减一，说明新加入一个线程参与到扩容操作
             if (U.compareAndSwapInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
                 if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
                     return;
@@ -299,7 +307,9 @@ private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
                         // 通过CAS把ln链表设置到新数组的i位置，hn链表设置到i+n的位置
                         setTabAt(nextTab, i, ln);
                         setTabAt(nextTab, i + n, hn);
+                        // 在table i位置处插上ForwardingNode，表示该节点已经处理过了
                         setTabAt(tab, i, fwd);
+                        // advance = true可以执行--i动作，遍历节点
                         advance = true;
                     }
                     else if (f instanceof TreeBin) {
@@ -327,7 +337,7 @@ private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
                                 ++hc;
                             }
                         }
-                        // 判断是否需要转成红黑树
+                        // 扩容后节点个数若<=6，将树转链表
                         ln = (lc <= UNTREEIFY_THRESHOLD) ? untreeify(lo) : (hc != 0) ? new TreeBin<K, V>(lo) : t;
                         hn = (hc <= UNTREEIFY_THRESHOLD) ? untreeify(hi) : (lc != 0) ? new TreeBin<K, V>(hi) : t;
                         // 通过CAS把ln设置到新数组的i位置，hn设置到i+n位置
@@ -344,6 +354,9 @@ private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
 ```
 
 ForwardingNode的作用就是支持扩容操作，将已处理的节点和空节点置为ForwardingNode，并发处理时多个线程经过ForwardingNode就表示已经遍历了，就往后遍历。
+
+![transfe](media/transfer.png)
+
 
 ### treeifyBin方法
 
@@ -478,6 +491,8 @@ private final void addCount(long x, int check) {
 
 计数的逻辑参考了`java.util.concurrent.atomic.LongAdder`。它的作者也是Doug Lea。核心思想是在并发较低时，只需更新base值。在高并发的情况下，将对单一值的更新转化为数组上元素的更新，以降低并发争用。总的映射个数为base + CounterCell各个元素的和。如果总数大于阈值，扩容。
 
+可以发现，ConcurrentHashMap在并发处理中使用的是乐观锁，当有冲突的时候才进行并发处理，而且流程步骤很清晰，但是细节设计很复杂。
+
 ## get方法
 
 ```java
@@ -509,6 +524,40 @@ get方法的操作步骤如下：
 1. 计算hash值，定位到该table索引位置，如果是首节点符合就返回
 2. 如果遇到扩容的时候，会调用ForwardingNode的find方法，查找该节点，匹配就返回
 3. 以上都不符合的话，就往下遍历节点，匹配就返回。否则最后返回null
+
+ForwardingNode的find方法：
+
+```java
+Node<K,V> find(int h, Object k) {
+    // loop to avoid arbitrarily deep recursion on forwarding nodes
+    outer: for (Node<K,V>[] tab = nextTable;;) {
+        Node<K,V> e; int n;
+        if (k == null || tab == null || (n = tab.length) == 0 ||
+            (e = tabAt(tab, (n - 1) & h)) == null)
+            return null;
+        for (;;) {
+            int eh; K ek;
+            // 如果在原链表中找到了相应的key，则返回
+            if ((eh = e.hash) == h &&
+                ((ek = e.key) == k || (ek != null && k.equals(ek))))
+                return e;
+            // hash值为负值表示正在扩容
+            if (eh < 0) {
+                // 如果是ForwardingNode，则在nextTable中寻找
+                if (e instanceof ForwardingNode) {
+                    tab = ((ForwardingNode<K,V>)e).nextTable;
+                    continue outer;
+                }
+                // 否则调用Node.find方法，在原tab中寻找
+                else
+                    return e.find(h, k);
+            }
+            if ((e = e.next) == null)
+                return null;
+        }
+    }
+}
+```
 
 ## size方法
 
