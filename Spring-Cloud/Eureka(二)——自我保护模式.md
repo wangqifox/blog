@@ -4,7 +4,7 @@ date: 2018/06/20 16:47:25
 ---
 
 根据[Eureka(一)——服务注册与发现][1]，我们实现了一个服务注册中心和一个服务提供方。经过一段时间，我们发现服务注册中心产生了一个报警：
-
+<!-- more -->
 ![EurekaEmergency](media/EurekaEmergency.png)
 
 这是因为Eureka进入了自我保护模式。
