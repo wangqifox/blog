@@ -75,8 +75,8 @@ org.springframework.cloud.netflix.eureka.config.EurekaDiscoveryClientConfigServi
 ```java
 @ConditionalOnBean(EurekaDiscoveryClientConfiguration.Marker.class)
 @AutoConfigureAfter(name = {"org.springframework.cloud.autoconfigure.RefreshAutoConfiguration",
-		"org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration",
-		"org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationAutoConfiguration"})
+        "org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration",
+        "org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationAutoConfiguration"})
 ```
 
 因此首先执行`EurekaDiscoveryClientConfiguration`配置类，加载其中的配置，然后再去执行`EurekaClientAutoConfiguration`。
@@ -90,30 +90,30 @@ EurekaClientAutoConfiguration类的主要功能是配置EurekaClient。其中有
 @ConditionalOnRefreshScope
 protected static class RefreshableEurekaClientConfiguration {
 
-	@Autowired
-	private ApplicationContext context;
+    @Autowired
+    private ApplicationContext context;
 
-	@Autowired
-	private AbstractDiscoveryClientOptionalArgs<?> optionalArgs;
+    @Autowired
+    private AbstractDiscoveryClientOptionalArgs<?> optionalArgs;
 
-	@Bean(destroyMethod = "shutdown")
-	@ConditionalOnMissingBean(value = EurekaClient.class, search = SearchStrategy.CURRENT)
-	@org.springframework.cloud.context.config.annotation.RefreshScope
-	@Lazy
-	public EurekaClient eurekaClient(ApplicationInfoManager manager, EurekaClientConfig config, EurekaInstanceConfig instance) {
-		manager.getInfo(); // force initialization
-		return new CloudEurekaClient(manager, config, this.optionalArgs,
-				this.context);
-	}
+    @Bean(destroyMethod = "shutdown")
+    @ConditionalOnMissingBean(value = EurekaClient.class, search = SearchStrategy.CURRENT)
+    @org.springframework.cloud.context.config.annotation.RefreshScope
+    @Lazy
+    public EurekaClient eurekaClient(ApplicationInfoManager manager, EurekaClientConfig config, EurekaInstanceConfig instance) {
+        manager.getInfo(); // force initialization
+        return new CloudEurekaClient(manager, config, this.optionalArgs,
+                this.context);
+    }
 
-	@Bean
-	@ConditionalOnMissingBean(value = ApplicationInfoManager.class, search = SearchStrategy.CURRENT)
-	@org.springframework.cloud.context.config.annotation.RefreshScope
-	@Lazy
-	public ApplicationInfoManager eurekaApplicationInfoManager(EurekaInstanceConfig config) {
-		InstanceInfo instanceInfo = new InstanceInfoFactory().create(config);
-		return new ApplicationInfoManager(config, instanceInfo);
-	}
+    @Bean
+    @ConditionalOnMissingBean(value = ApplicationInfoManager.class, search = SearchStrategy.CURRENT)
+    @org.springframework.cloud.context.config.annotation.RefreshScope
+    @Lazy
+    public ApplicationInfoManager eurekaApplicationInfoManager(EurekaInstanceConfig config) {
+        InstanceInfo instanceInfo = new InstanceInfoFactory().create(config);
+        return new ApplicationInfoManager(config, instanceInfo);
+    }
 
 }
 ```
