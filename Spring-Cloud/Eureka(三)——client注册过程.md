@@ -414,6 +414,8 @@ private class HeartbeatThread implements Runnable {
 
 #### 服务下线
 
+服务下线一般在服务关闭(shut down)的时候调用，用来把自身的服务从Eureka Server中删除，以防客户端调用不存在的服务。
+
 服务下线的任务在`Discovery.unregister`方法中，其最终调用的方法是`AbstractJerseyEurekaHttpClient.cancel(String appName, String id)`。该方法向Eureka Server发送DELETE请求，请求的urlPath是`apps/EUREKA-CLIENT/wangqideimac.lan:eureka-client:8762`，其中`EUREEKA-CLIENT`表示服务名称，`wangqideimac.lan:eureka-client:8762`表示服务id。在本例中完整的请求地址是`http://localhost:8761/eureka/apps/EUREKA-CLIENT/wangqideimac.lan:eureka-client:8762`。
 
 
