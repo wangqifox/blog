@@ -11,6 +11,10 @@ date: 2018/06/20 16:47:25
 
 Eureka默认开启了自我保护模式（可以通过`eureka.server.enable-self.preservation`配置）。该模式被激活的条件是：在1分钟后，`Renews(last min) < Renews threshold`。
 
+**Renews threshold:   Eureka Server期望每分钟收到客户端实例续约的总数
+Renews(last min):   Eureka Server最后一分钟收到客户端实例续约的总数**
+
+
 ## 服务器端续约阈值的计算源码（Renews threshold）
 
 `com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl#openForTraffic`
