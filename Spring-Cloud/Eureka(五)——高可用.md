@@ -101,6 +101,11 @@ eureka:
 
 ![ES-2](media/ES-2.png)
 
+需要注意的是，Eureka Server的服务注册信息不能进行二次传播。如下图的实例关系配置是不可取的：
+
+![ES-1](media/ES-1.png)
+
+
 此图的每个Eureka Server实例是单向的向另外一个实例注册，假如现有一个新的客户端实例C向1注册，那么，1和2中都会有C的注册信息，但是3中是没有C的注册信息的（详见`com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl#replicateToPeers`）。
 
 启动3个Eureka Server实例：
