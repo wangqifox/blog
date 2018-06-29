@@ -3,7 +3,11 @@ title: Eureka(五)——高可用
 date: 2018/06/28 21:46:25
 ---
 
-在文章[Eureka(一)——服务注册与发现][1]中，我们举的例子都是单点运行的，不适合于生成环境。Eureka官方给出的应用部署架构图是这样的：
+在文章[Eureka(一)——服务注册与发现][1]中，我们举的例子都是单点运行的，不适合于生成环境。
+
+<!-- more -->
+
+Eureka官方给出的应用部署架构图是这样的：
 
 ![eureka-architecture](media/eureka-architecture.png)
 
