@@ -182,12 +182,12 @@ public interface ServiceInstanceChooser {
 
 ```java
 public ServiceInstance choose(String serviceId) {
-	Server server = getServer(serviceId);
-	if (server == null) {
-		return null;
-	}
-	return new RibbonServer(serviceId, server, isSecure(server, serviceId),
-			serverIntrospector(serviceId).getMetadata(server));
+    Server server = getServer(serviceId);
+    if (server == null) {
+        return null;
+    }
+    return new RibbonServer(serviceId, server, isSecure(server, serviceId),
+            serverIntrospector(serviceId).getMetadata(server));
 }
 ```
 
@@ -195,7 +195,7 @@ public ServiceInstance choose(String serviceId) {
 
 ```java
 protected Server getServer(String serviceId) {
-	return getServer(getLoadBalancer(serviceId));
+    return getServer(getLoadBalancer(serviceId));
 }
 ```
 
@@ -230,13 +230,13 @@ public interface ILoadBalancer {
 @Bean
 @ConditionalOnMissingBean
 public ILoadBalancer ribbonLoadBalancer(IClientConfig config,
-		ServerList<Server> serverList, ServerListFilter<Server> serverListFilter,
-		IRule rule, IPing ping, ServerListUpdater serverListUpdater) {
-	if (this.propertiesFactory.isSet(ILoadBalancer.class, name)) {
-		return this.propertiesFactory.get(ILoadBalancer.class, config, name);
-	}
-	return new ZoneAwareLoadBalancer<>(config, rule, ping, serverList,
-			serverListFilter, serverListUpdater);
+        ServerList<Server> serverList, ServerListFilter<Server> serverListFilter,
+        IRule rule, IPing ping, ServerListUpdater serverListUpdater) {
+    if (this.propertiesFactory.isSet(ILoadBalancer.class, name)) {
+        return this.propertiesFactory.get(ILoadBalancer.class, config, name);
+    }
+    return new ZoneAwareLoadBalancer<>(config, rule, ping, serverList,
+            serverListFilter, serverListUpdater);
 }
 ```
 
@@ -522,8 +522,8 @@ private List<RestTemplate> restTemplates = Collections.emptyList();
 
 @Bean
 public SmartInitializingSingleton loadBalancedRestTemplateInitializerDeprecated(
-		final ObjectProvider<List<RestTemplateCustomizer>> restTemplateCustomizers) {
-	return () -> restTemplateCustomizers.ifAvailable(customizers -> {
+        final ObjectProvider<List<RestTemplateCustomizer>> restTemplateCustomizers) {
+    return () -> restTemplateCustomizers.ifAvailable(customizers -> {
         for (RestTemplate restTemplate : LoadBalancerAutoConfiguration.this.restTemplates) {
             for (RestTemplateCustomizer customizer : customizers) {
                 customizer.customize(restTemplate);
@@ -535,31 +535,31 @@ public SmartInitializingSingleton loadBalancedRestTemplateInitializerDeprecated(
 @Bean
 @ConditionalOnMissingBean
 public LoadBalancerRequestFactory loadBalancerRequestFactory(
-		LoadBalancerClient loadBalancerClient) {
-	return new LoadBalancerRequestFactory(loadBalancerClient, transformers);
+        LoadBalancerClient loadBalancerClient) {
+    return new LoadBalancerRequestFactory(loadBalancerClient, transformers);
 }
 
 @Configuration
 @ConditionalOnMissingClass("org.springframework.retry.support.RetryTemplate")
 static class LoadBalancerInterceptorConfig {
-	@Bean
-	public LoadBalancerInterceptor ribbonInterceptor(
-			LoadBalancerClient loadBalancerClient,
-			LoadBalancerRequestFactory requestFactory) {
-		return new LoadBalancerInterceptor(loadBalancerClient, requestFactory);
-	}
+    @Bean
+    public LoadBalancerInterceptor ribbonInterceptor(
+            LoadBalancerClient loadBalancerClient,
+            LoadBalancerRequestFactory requestFactory) {
+        return new LoadBalancerInterceptor(loadBalancerClient, requestFactory);
+    }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public RestTemplateCustomizer restTemplateCustomizer(
-			final LoadBalancerInterceptor loadBalancerInterceptor) {
-		return restTemplate -> {
+    @Bean
+    @ConditionalOnMissingBean
+    public RestTemplateCustomizer restTemplateCustomizer(
+            final LoadBalancerInterceptor loadBalancerInterceptor) {
+        return restTemplate -> {
             List<ClientHttpRequestInterceptor> list = new ArrayList<>(
                     restTemplate.getInterceptors());
             list.add(loadBalancerInterceptor);
             restTemplate.setInterceptors(list);
         };
-	}
+    }
 }
 ```
 
@@ -569,11 +569,11 @@ static class LoadBalancerInterceptorConfig {
 
 ```java
 public ClientHttpResponse intercept(final HttpRequest request, final byte[] body,
-		final ClientHttpRequestExecution execution) throws IOException {
-	final URI originalUri = request.getURI();
-	String serviceName = originalUri.getHost();
-	Assert.state(serviceName != null, "Request URI does not contain a valid hostname: " + originalUri);
-	return this.loadBalancer.execute(serviceName, requestFactory.createRequest(request, body, execution));
+        final ClientHttpRequestExecution execution) throws IOException {
+    final URI originalUri = request.getURI();
+    String serviceName = originalUri.getHost();
+    Assert.state(serviceName != null, "Request URI does not contain a valid hostname: " + originalUri);
+    return this.loadBalancer.execute(serviceName, requestFactory.createRequest(request, body, execution));
 }
 ```
 
@@ -583,15 +583,15 @@ public ClientHttpResponse intercept(final HttpRequest request, final byte[] body
 
 ```java
 public <T> T execute(String serviceId, LoadBalancerRequest<T> request) throws IOException {
-	ILoadBalancer loadBalancer = getLoadBalancer(serviceId);
-	Server server = getServer(loadBalancer);
-	if (server == null) {
-		throw new IllegalStateException("No instances available for " + serviceId);
-	}
-	RibbonServer ribbonServer = new RibbonServer(serviceId, server, isSecure(server,
-			serviceId), serverIntrospector(serviceId).getMetadata(server));
+    ILoadBalancer loadBalancer = getLoadBalancer(serviceId);
+    Server server = getServer(loadBalancer);
+    if (server == null) {
+        throw new IllegalStateException("No instances available for " + serviceId);
+    }
+    RibbonServer ribbonServer = new RibbonServer(serviceId, server, isSecure(server,
+            serviceId), serverIntrospector(serviceId).getMetadata(server));
 
-	return execute(serviceId, ribbonServer, request);
+    return execute(serviceId, ribbonServer, request);
 }
 ```
 
