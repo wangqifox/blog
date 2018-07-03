@@ -294,7 +294,7 @@ public void registerThrowable(LoadBalancedRetryContext context, Throwable throwa
 
 ```java
 public boolean canRetrySameServer(LoadBalancedRetryContext context) {
-	return sameServerCount < lbContext.getRetryHandler().getMaxRetriesOnSameServer() && canRetry(context);
+    return sameServerCount < lbContext.getRetryHandler().getMaxRetriesOnSameServer() && canRetry(context);
 }
 ```
 
@@ -304,7 +304,7 @@ public boolean canRetrySameServer(LoadBalancedRetryContext context) {
 
 ```java
 public boolean canRetryNextServer(LoadBalancedRetryContext context) {
-	return nextServerCount <= lbContext.getRetryHandler().getMaxRetriesOnNextServer() && canRetry(context);
+    return nextServerCount <= lbContext.getRetryHandler().getMaxRetriesOnNextServer() && canRetry(context);
 }
 ```
 
