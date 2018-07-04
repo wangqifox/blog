@@ -259,7 +259,7 @@ private boolean isOverloaded(Target target) {
 
 `InstanceInfoReplicator`是Eureka Client的服务实例复制器。在[Eureka(三)——client注册过程][1]中有详解。
 
-服务实例状态发生变化时，会调用`onDemandUpdate`方法向Eureka Server发起注册，同步服务实例信息。`onDemandUpdate`方法中使用RateLimiter避免状态频繁发生变化而向Eureka Server频繁同步。代码如下：
+服务实例状态发生变化时，会调用`onDemandUpdate`方法向Eureka Server发起注册，同步服务实例信息。`onDemandUpdate`方法中使用RateLimiter避免状态频繁发生变化而向Eureka Server频繁同步。代码如下：
 
 ```java
 private final RateLimiter rateLimiter;
