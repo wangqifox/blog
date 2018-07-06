@@ -123,6 +123,26 @@ Observable<String> observable = Observable.fromArray(words);
 // onCompleted();
 ```
 
+### timer
+
+`timer`相当于一个定时任务，延时一定时间然后开始执行任务。间隔执行的功能属于`interval`操作符。
+
+```java
+logger.info("start");
+Observable.timer(3, TimeUnit.SECONDS)
+        .subscribe(new Consumer<Long>() {
+            @Override
+            public void accept(Long aLong) throws Exception {
+                logger.info("accept: " + aLong);
+            }
+        });
+```
+
+执行结果：
+
+![rxjava-16](media/rxjava-16.png)
+
+
 ### interval
 
 定时器功能。周期性执行任务。
@@ -372,6 +392,127 @@ Observable.just(1, 2, 3, 4, 5, 6)
 
 ![rxjava-11](media/rxjava-11.png)
 
+### doOnNext
+
+`doOnNext`的作用是让订阅者在接收到数据之前干点有意思的事情。
+
+```java
+Observable.just(1, 2, 3, 4)
+        .doOnNext(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                logger.info("doOnNext " + integer);
+            }
+        }).subscribe(new Consumer<Integer>() {
+    @Override
+    public void accept(Integer integer) throws Exception {
+        logger.info("accept: " + integer);
+    }
+});
+```
+
+执行结果：
+
+![rxjava-17](media/rxjava-17.png)
+
+
+### debounce
+
+`debounce`的作用是发送频率过快的项。
+
+```java
+Observable.create(new ObservableOnSubscribe<Integer>() {
+    @Override
+    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+        emitter.onNext(1);
+        Thread.sleep(400);
+        emitter.onNext(2);
+        Thread.sleep(505);
+        emitter.onNext(3);
+        Thread.sleep(100);
+        emitter.onNext(4);
+        Thread.sleep(605);
+        emitter.onNext(5);
+        Thread.sleep(510);
+        emitter.onComplete();
+    }
+}).debounce(500, TimeUnit.MILLISECONDS)
+        .subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                logger.info("accept: " + integer);
+            }
+        });
+```
+
+执行结果：
+
+![rxjava-18](media/rxjava-18.png)
+
+`debounce(500, TimeUnit.MILLISECONDS)`的作用是去除发送间隔小于500毫秒的发射事件，所以1和3被过滤掉了
+
+### defer
+
+`defer`操作符每次订阅都会创建一个新的`Observable`，如果没有被订阅，就不会产生新的`Observable`。
+
+```java
+Observable<Integer> observable = Observable.defer(new Callable<ObservableSource<Integer>>() {
+    @Override
+    public ObservableSource<Integer> call() throws Exception {
+        return Observable.just(1, 2, 3);
+    }
+});
+
+Observer observer = new Observer<Integer>() {
+    @Override
+    public void onSubscribe(Disposable d) {
+
+    }
+
+    @Override
+    public void onNext(Integer integer) {
+        logger.info("onNext: " + integer);
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        logger.info("onError: " + e.getMessage());
+    }
+
+    @Override
+    public void onComplete() {
+        logger.info("onComplete");
+    }
+};
+
+observable.subscribe(observer);
+observable.subscribe(observer);
+```
+
+执行结果：
+
+![rxjava-19](media/rxjava-19.png)
+
+### last
+
+`last`操作符仅取出可观察到的最后一个值，或者是满足某些条件的最后一项。
+
+```java
+Observable.just(1, 2, 3)
+        .last(4)
+        .subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                logger.info("last: " + integer);
+            }
+        });
+```
+
+执行结果：
+
+![rxjava-20](media/rxjava-20.png)
+
+
 ## 组合操作符
 
 ### merge
@@ -392,6 +533,80 @@ Observable.merge(observable1, observable2).subscribe(new Consumer<Integer>() {
 执行结果：
 
 ![rxjava-12](media/rxjava-12.png)
+
+### reduce
+
+`reduce`操作符每次用一个方法处理一个值，可以有一个seed作为初始值
+
+```java
+Observable.just(1, 2, 3)
+        .reduce(new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                return integer + integer2;
+            }
+        }).subscribe(new Consumer<Integer>() {
+    @Override
+    public void accept(Integer integer) throws Exception {
+        logger.info("accept: " + integer);
+    }
+});
+```
+
+执行结果：
+
+![rxjava-21](media/rxjava-21.png)
+
+### scan
+
+`scan`操作符作用和上面的`reduce`一致，唯一的区别是`reduce`是输出结果，而`scan`会把每个步骤都输出。
+
+```java
+Observable.just(1, 2, 3)
+        .scan(new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                return integer + integer2;
+            }
+        }).subscribe(new Consumer<Integer>() {
+    @Override
+    public void accept(Integer integer) throws Exception {
+        logger.info("accept : scan " + integer);
+    }
+});
+```
+
+执行结果：
+
+![rxjava-22](media/rxjava-22.png)
+
+### window
+
+`window`安装时间划分窗口，将数据发送给不同的`Observable`。
+
+```java
+Observable.interval(1, TimeUnit.SECONDS)
+        .take(15)
+        .window(3, TimeUnit.SECONDS)
+        .subscribeOn(Schedulers.io())
+        .subscribe(new Consumer<Observable<Long>>() {
+            @Override
+            public void accept(Observable<Long> longObservable) throws Exception {
+                logger.info("Sub Divide begin...");
+                Integer ri = new Random().nextInt();
+                longObservable.subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        logger.info(ri + " Next: " + aLong);
+                    }
+                });
+            }
+        });
+```
+
+执行结果：
+
+![rxjava-23](media/rxjava-23.png)
 
 
 ### concat
