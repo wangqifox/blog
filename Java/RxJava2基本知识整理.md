@@ -415,6 +415,9 @@ Observable.just(1, 2, 3, 4)
 
 ![rxjava-17](media/rxjava-17.png)
 
+### doOnEach
+
+`doOnEach`可以给`Observable`加上这样的一个回调：`Observable`每发射一个数据的时候就会触发这个回调，不仅包括`onNext`还包括`onError`和`onCompleted`。
 
 ### debounce
 
@@ -714,4 +717,5 @@ Observable.concatEager(Observable.fromArray(observable1, observable2))
 > https://www.jianshu.com/p/b39afa92807e
 > https://github.com/IamXiaRui/Android_5.0_ViewDemo/tree/master/FirstRxJavaDemo
 > http://rxmarbles.com/
+> https://blog.csdn.net/qq_20198405/article/details/51307198
 
