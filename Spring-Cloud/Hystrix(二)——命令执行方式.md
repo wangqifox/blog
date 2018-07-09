@@ -18,7 +18,7 @@ HystrixCommand command = new HystrixCommand(arg1, arg2);
 ```java
 HystrixObservableCommand command = new HystrixObservableCommand(arg1, arg2);
 ```
-
+<!-- more -->
 # 命令执行方式
 
 Hystrix命令在抽象类`HystrixCommand`中，有四种调用方式

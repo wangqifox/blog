@@ -6,7 +6,7 @@ date: 2018/07/07 09:37:25
 # 正常逻辑执行
 
 `AbstractCommand.toObservable()`方法中，当缓存特性未开启或者缓存未命中时，将`applyHystrixSemantics`传入`Observable.defer`方法中，声明执行命令的`Observable`。
-
+<!-- more -->
 ## applyHystrixSemantics变量
 
 创建`applyHystrixSemantics`的代码如下：
