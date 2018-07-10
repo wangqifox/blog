@@ -14,7 +14,7 @@ date: 2018/07/10 11:18:25
 
 Hystrix执行命令整体流程如下图：
 
-![hystrix_fallback](media/hystrix_fallback.jpeg)
+![hystrix_fallback](media/hystrix_fallback.png)
 
 - 红圈：Hystrix命令执行失败，执行回退逻辑。也就是大家经常在文章中看到的"服务降级"
 - 绿圈：四种情况会触发失败回退逻辑(fallback)
