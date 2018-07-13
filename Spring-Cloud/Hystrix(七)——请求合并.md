@@ -801,7 +801,7 @@ public class UserService {
 
     public List<String> findAll(List<String> ids) {
         System.out.println("findAll" + ids);
-        return restTemplate.getForObject("http://eureka-client-multi/users?ids={1}", List.class, StringUtils.join(ids, ","));
+        return restTemplate.getForObject("http://eureka-client/users?ids={1}", List.class, StringUtils.join(ids, ","));
     }
 }
 ```
