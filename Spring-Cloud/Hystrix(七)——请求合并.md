@@ -719,6 +719,61 @@ public class RealCollapserTimer implements CollapserTimer {
 
 `com.netflix.hystrix.collapser.RequestCollapser.CollapsedTask`，定时任务，固定周期（可配，默认`HystrixCollapserProperties.timerDelayInMilliseconds = 10ms`）轮询其对应的一个RequestCollapser当前RequestBatch。若有命令需要执行，则提交RequestCollapser合并执行。
 
+代码如下：
+
+```java
+private class CollapsedTask implements TimerListener {
+    final Callable<Void> callableWithContextOfParent;
+
+    CollapsedTask() {
+        // this gets executed from the context of a HystrixCommand parent thread (such as a Tomcat thread)
+        // so we create the callable now where we can capture the thread context
+        callableWithContextOfParent = new HystrixContextCallable<Void>(concurrencyStrategy, new Callable<Void>() {
+            // the wrapCallable call allows a strategy to capture thread-context if desired
+
+            @Override
+            public Void call() throws Exception {
+                try {
+                    // we fetch current so that when multiple threads race
+                    // we can do compareAndSet with the expected/new to ensure only one happens
+                    RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> currentBatch = batch.get();
+                    // 1) it can be null if it got shutdown
+                    // 2) we don't execute this batch if it has no requests and let it wait until next tick to be executed
+                    if (currentBatch != null && currentBatch.getSize() > 0) {
+                        // do execution within context of wrapped Callable
+                        createNewBatchAndExecutePreviousIfNeeded(currentBatch);
+                    }
+                } catch (Throwable t) {
+                    logger.error("Error occurred trying to execute the batch.", t);
+                    t.printStackTrace();
+                    // ignore error so we don't kill the Timer mainLoop and prevent further items from being scheduled
+                }
+                return null;
+            }
+
+        });
+    }
+
+    @Override
+    public void tick() {
+        try {
+            callableWithContextOfParent.call();
+        } catch (Exception e) {
+            logger.error("Error occurred trying to execute callable inside CollapsedTask from Timer.", e);
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public int getIntervalTimeInMilliseconds() {
+        return properties.timerDelayInMilliseconds().get();
+    }
+
+}
+```
+
+可以看到，`CollapsedTask`会以`IntervalTimeInMilliseconds`的时间间隔为周期调用`tick()`方法，`tick()`方法会调用`callableWithContextOfParent.call()`，在其中调用`createNewBatchAndExecutePreviousIfNeeded`来执行命令合并的请求
+
 # 请求合并的使用
 
 前面我们学习了Hystrix请求合并的原理，现在来看看如何在Hystrix中使用请求合并功能。
