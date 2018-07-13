@@ -719,13 +719,218 @@ public class RealCollapserTimer implements CollapserTimer {
 
 `com.netflix.hystrix.collapser.RequestCollapser.CollapsedTask`，定时任务，固定周期（可配，默认`HystrixCollapserProperties.timerDelayInMilliseconds = 10ms`）轮询其对应的一个RequestCollapser当前RequestBatch。若有命令需要执行，则提交RequestCollapser合并执行。
 
+# 请求合并的使用
+
+前面我们学习了Hystrix请求合并的原理，现在来看看如何在Hystrix中使用请求合并功能。
+
+首先我们在eureka-client中增加一个获取批量信息的接口：
+
+```java
+@GetMapping("/users")
+public List<String> getUsers(@RequestParam("ids") String ids) {
+    System.out.println("getUsers: " + ids);
+    return Arrays.stream(ids.split(",")).map(id -> "user: " + id).collect(Collectors.toList());
+}
+```
+
+简单起见，这个接口仅仅返回了一个里面保存`user: {id}`的列表。
+
+## 继承HystrixCollapser实现请求合并
+
+### HystrixCollapser的实现类
+
+```java
+public class UserCommandCollapser extends HystrixCollapser<List<String>, String, String> {
+    private UserService userService;
+    private final String userId;
+
+    public UserCommandCollapser(UserService userService, String userId) {
+        super(Setter.withCollapserKey(HystrixCollapserKey.Factory.asKey("UserCommandCollapser"))
+            .andCollapserPropertiesDefaults(HystrixCollapserProperties.Setter().withTimerDelayInMilliseconds(100)));
+        this.userService = userService;
+        this.userId = userId;
+    }
+
+    /**
+     * 获取请求参数
+     * @return
+     */
+    @Override
+    public String getRequestArgument() {
+        return userId;
+    }
+
+    /**
+     * 合并请求产生批量命令的具体实现
+     * @param collapsedRequests
+     * @return
+     */
+    @Override
+    protected HystrixCommand<List<String>> createCommand(Collection<CollapsedRequest<String, String>> collapsedRequests) {
+        List<String> userIds = new ArrayList<>(collapsedRequests.size());
+        userIds.addAll(collapsedRequests.stream().map(CollapsedRequest::getArgument).collect(Collectors.toList()));
+        return new UserBatchCommand(userService, userIds);
+    }
+
+    /**
+     * 批量命令结果返回后的处理，需要实现将批量结果拆分并传递给合并前的各原子请求命令的逻辑中
+     * @param batchResponse
+     * @param collapsedRequests
+     */
+    @Override
+    protected void mapResponseToRequests(List<String> batchResponse, Collection<CollapsedRequest<String, String>> collapsedRequests) {
+        int count = 0;
+        for (CollapsedRequest<String, String> collapsedRequest : collapsedRequests) {
+            String user = batchResponse.get(count++);
+            collapsedRequest.setResponse(user);
+        }
+    }
+}
+```
+
+### UserService批量查询接口
+
+只需要实现批量查询接口，单个查询也是走批量查询
+
+```java
+@Service
+public class UserService {
+    @LoadBalanced
+    @Autowired
+    private RestTemplate restTemplate;
+
+    public List<String> findAll(List<String> ids) {
+        System.out.println("findAll" + ids);
+        return restTemplate.getForObject("http://eureka-client-multi/users?ids={1}", List.class, StringUtils.join(ids, ","));
+    }
+}
+```
+
+### UserBatchCommand批量查询命令
+
+```java
+public class UserBatchCommand extends HystrixCommand<List<String>> {
+    private UserService userService;
+    private List<String> ids;
+
+    public UserBatchCommand(UserService userService, List<String> ids) {
+        super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey("UserBatchCommand"))
+            .andCommandKey(HystrixCommandKey.Factory.asKey("findAll")));
+        this.userService = userService;
+        this.ids = ids;
+    }
+
+    @Override
+    protected List<String> run() throws Exception {
+        if (ids != null && !ids.isEmpty()) {
+            return userService.findAll(ids);
+        }
+        return new ArrayList<>();
+    }
+}
+```
+
+### 测试
+
+我们在服务消费者端创建访问接口，来测试合并请求：
+
+```java
+@Autowired
+    UserService userService;
+
+@GetMapping("/users")
+public void users() throws ExecutionException, InterruptedException {
+    HystrixRequestContext context = HystrixRequestContext.initializeContext();
+    UserCommandCollapser userCommandCollapser1 = new UserCommandCollapser(userService, "1");
+    UserCommandCollapser userCommandCollapser2 = new UserCommandCollapser(userService, "2");
+    UserCommandCollapser userCommandCollapser3 = new UserCommandCollapser(userService, "3");
+    UserCommandCollapser userCommandCollapser4 = new UserCommandCollapser(userService, "4");
+
+    Future<String> f1 = userCommandCollapser1.queue();
+    Future<String> f2 = userCommandCollapser2.queue();
+    Future<String> f3 = userCommandCollapser3.queue();
+    Thread.sleep(300);
+    Future<String> f4 = userCommandCollapser4.queue();
+
+    String s1 = f1.get();
+    String s2 = f2.get();
+    String s3 = f3.get();
+    String s4 = f4.get();
+
+    System.out.println(s1);
+    System.out.println(s2);
+    System.out.println(s3);
+    System.out.println(s4);
+    context.close();
+}
+```
+
+1. 首先要初始化`HystrixRequestContext`
+2. 创建`UserCommandCollapser`类的实例来发起请求，先发送3个请求，然后睡眠300毫秒，再发起1个请求，这样，前3个请求就会被合并为1个请求，第4个请求因为间隔的时间比较久，所以不会被合并，而是单独创建一个线程去处理。
 
 
+服务提供方的输出结果：
+
+![service-client](media/service-client.png)
+
+服务消费方的输出结果：
+
+![hystrix-collapse](media/hystrix-collapser.png)
+
+可以看到，前三个请求被合并成一个请求，第四个请求被单独处理
 
 
+## 使用注解方式来实现请求合并
 
+上面这种请求合并方式写起来稍微有点麻烦，我们可以使用注解来更优雅地实现这一功能。
 
+首先在UserService中添加两个方法，如下：
 
+```java
+@Service
+class UserService {
+    @Autowired
+    RestTemplate restTemplate;
+
+    @HystrixCollapser(batchMethod = "findAll"
+            , scope = com.netflix.hystrix.HystrixCollapser.Scope.REQUEST
+            , collapserProperties = {@HystrixProperty(name = "timerDelayInMilliseconds", value = "300")}
+            )
+    public Future<String> find(String id) {
+        return null;
+    }
+
+    @HystrixCommand
+    public List<String> findAll(List<String> ids) {
+        System.out.println("findAll" + ids);
+        return restTemplate.getForObject("http://eureka-client/users?ids={1}", List.class, StringUtils.join(ids, ","));
+    }
+}
+```
+
+在`find`方法上添加`@HystrixCollapser`注解实现请求合并。用`batchMethod`属性指定请求合并后的处理方法，`scope`属性指定命令合并的范围（`REQUEST`表示单个请求，`GLOBAL`表示全局请求），`collapserProperties`属性指定其他属性。
+
+在UserService写好之后，直接调用就可以：
+
+```java
+@GetMapping("/users")
+public void users() throws ExecutionException, InterruptedException {
+    HystrixRequestContext context = HystrixRequestContext.initializeContext();
+    Future<String> future1 = userService.find("1");
+    Future<String> future2 = userService.find("2");
+    Future<String> future3 = userService.find("3");
+    Thread.sleep(30);
+    Future<String> future4 = userService.find("4");
+
+    System.out.println(future1.get());
+    System.out.println(future2.get());
+    System.out.println(future3.get());
+    System.out.println(future4.get());
+    context.close();
+}
+```
+
+和前面一样，前三个请求会进行合并，第四个请求会单独执行。
 
 
 
@@ -748,5 +953,8 @@ public class RealCollapserTimer implements CollapserTimer {
 
 > http://youdang.github.io/2016/02/05/translate-hystrix-wiki-how-it-works/#%E8%AF%B7%E6%B1%82%E5%90%88%E5%B9%B6
 > https://github.com/YunaiV/Blog/blob/master/Hystrix/2018_11_04_Hystrix%20%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%20%E2%80%94%E2%80%94%20%E5%91%BD%E4%BB%A4%E5%90%88%E5%B9%B6%E6%89%A7%E8%A1%8C.md
+> https://blog.csdn.net/u012702547/article/details/78213270
+> https://segmentfault.com/a/1190000012256788
+> https://blog.csdn.net/zhuchuangang/article/details/74663755
 
 
