@@ -352,9 +352,92 @@ public boolean isOpen() {
 }
 ```
 
+# 断路器测试
 
+对断路器的测试，我们选择比较简单的方式，直接调用Hystrix的命令：
 
+```java
+public class CircuitBreakerCommand extends HystrixCommand<String> {
 
+    public CircuitBreakerCommand(String name) {
+        super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey("ThreadPoolTestGroup"))
+                .andCommandKey(HystrixCommandKey.Factory.asKey("testCommandKey"))
+                .andThreadPoolKey(HystrixThreadPoolKey.Factory.asKey(name))
+                .andCommandPropertiesDefaults(
+                        HystrixCommandProperties.Setter()
+                        .withCircuitBreakerEnabled(true)                    // 默认是true，本例中为了展现该参数
+                        .withCircuitBreakerForceOpen(false)                 // 默认是false，本例中为了展现该参数
+                        .withCircuitBreakerForceClosed(false)               // 默认是false，本例中为了展现该参数
+                        .withCircuitBreakerErrorThresholdPercentage(5)      // (1)错误百分比超过5%。默认是50
+                        .withCircuitBreakerRequestVolumeThreshold(10)       // (2)10s以内调用次数10次，同时满足(1)(2)熔断器打开。默认是20
+                        .withCircuitBreakerSleepWindowInMilliseconds(5000)  // 隔5秒之后，熔断器会尝试半开，重新放进来请求。默认是5000
+                )
+                .andThreadPoolPropertiesDefaults(
+                        HystrixThreadPoolProperties.Setter()
+                        .withMaxQueueSize(10)                   // 配置队列大小
+                        .withCoreSize(2)                        // 配置线程池里的线程数
+                )
+        );
+    }
+
+    @Override
+    protected String run() throws Exception {
+        Random rand = new Random();
+        if (1 == rand.nextInt(2)) {
+            throw new Exception("make exception");
+        }
+        return "running: ";
+    }
+
+    @Override
+    protected String getFallback() {
+        return "fallback: ";
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        for (int i = 0; i < 25; i++) {
+            Thread.sleep(500);
+            HystrixCommand<String> command = new CircuitBreakerCommand("testCircuitBreaker");
+            String result = command.execute();
+            System.out.println("call times:" + (i + 1) + " result: " + result + " isCircuitBreakerOpen: " + command.isCircuitBreakerOpen());
+        }
+    }
+}
+```
+
+执行结果如下：
+
+```
+call times:1 result: running:  isCircuitBreakerOpen: false
+call times:2 result: running:  isCircuitBreakerOpen: false
+call times:3 result: running:  isCircuitBreakerOpen: false
+call times:4 result: fallback:  isCircuitBreakerOpen: false
+call times:5 result: running:  isCircuitBreakerOpen: false
+call times:6 result: running:  isCircuitBreakerOpen: false
+call times:7 result: running:  isCircuitBreakerOpen: false
+call times:8 result: running:  isCircuitBreakerOpen: false
+call times:9 result: running:  isCircuitBreakerOpen: false
+call times:10 result: fallback:  isCircuitBreakerOpen: false
+熔断器打开
+call times:11 result: fallback:  isCircuitBreakerOpen: true
+call times:12 result: fallback:  isCircuitBreakerOpen: true
+call times:13 result: fallback:  isCircuitBreakerOpen: true
+call times:14 result: fallback:  isCircuitBreakerOpen: true
+call times:15 result: fallback:  isCircuitBreakerOpen: true
+call times:16 result: fallback:  isCircuitBreakerOpen: true
+call times:17 result: fallback:  isCircuitBreakerOpen: true
+call times:18 result: fallback:  isCircuitBreakerOpen: true
+call times:19 result: fallback:  isCircuitBreakerOpen: true
+call times:20 result: fallback:  isCircuitBreakerOpen: true
+5s后熔断器关闭
+call times:21 result: running:  isCircuitBreakerOpen: false
+call times:22 result: fallback:  isCircuitBreakerOpen: false
+call times:23 result: fallback:  isCircuitBreakerOpen: false
+call times:24 result: fallback:  isCircuitBreakerOpen: false
+call times:25 result: fallback:  isCircuitBreakerOpen: false
+```
+
+我们看到，前10此命令执行有两次失败，于是熔断器被打开，11到20次执行全部快速失败。5s后熔断器关闭，命令可以再次尝试执行。
 
 
 
@@ -364,4 +447,5 @@ public boolean isOpen() {
 
 > http://youdang.github.io/2016/02/05/translate-hystrix-wiki-how-it-works/#%E8%AF%B7%E6%B1%82%E5%90%88%E5%B9%B6
 > https://github.com/YunaiV/Blog/blob/master/Hystrix/2018_11_08_Hystrix%20%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%20%E2%80%94%E2%80%94%20%E6%96%AD%E8%B7%AF%E5%99%A8%20HystrixCircuitBreaker.md
+> https://www.jianshu.com/p/14958039fd15
 
