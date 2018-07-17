@@ -298,6 +298,20 @@ void setupPingTask() {
 2. 将可用的服务实例保存在`List<Server> upServerList`中。
 3. 如果服务可用性发生了改变，则调用`ServerStatusChangeListener.serverStatusChanged`进行相应的通知。
 
+##### PollingServerListUpdater
+
+Server List的更新在PollingServerListUpdater定时任务中执行。它在`RibbonClientConfiguration`中新建：
+
+```java
+@Bean
+@ConditionalOnMissingBean
+public ServerListUpdater ribbonServerListUpdater(IClientConfig config) {
+	return new PollingServerListUpdater(config);
+}
+```
+
+它在定时任务中调用`DynamicServerListLoadBalancer.updateListOfServers`方法，从本地的缓存（`virtualHostNameAppMap`）中获取服务列表，最后调用`updateAllServerList`方法更新服务实例，保存在`BaseLoadBalancer`实例的`allServerList`变量中。
+
 ### chooseServer
 
 `ZoneAwareLoadBalancer`的`chooseServer`方法代码如下：
@@ -397,8 +411,9 @@ public Server choose(Object key) {
 }
 ```
 
-1. 首先调用`getPredicate()`方法获取`CompositePredicate`实例
-2. 然后调用`CompositePredicate`的父类`AbstractServerPredicate`的`chooseRoundRobinAfterFiltering`方法
+1. 首先调用`getLoadBalancer()`方法获取`ZoneAwareLoadBalancer`
+2. 调用`getPredicate()`方法获取`CompositePredicate`实例
+3. 调用`CompositePredicate`的父类`AbstractServerPredicate`的`chooseRoundRobinAfterFiltering`方法。传入调用`ZoneAwareLoadBalancer.getAllServers()`方法获得的服务列表，该列表从`BaseLoadBalancer`实例的`allServerList`属性中获取。
 
 `chooseRoundRobinAfterFiltering`方法如下：
 
