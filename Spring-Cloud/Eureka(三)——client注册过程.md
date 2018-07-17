@@ -353,7 +353,7 @@ class CacheRefreshThread implements Runnable {
 
 1. 调用`EurekaHttpClientDecorator.getApplications`方法，返回EurekaHttpResponse<Applications>
 
-    最终调用的是`AbstractJerseryEurekaHttpClient.getApplicationsInternal`，该方法向Eureka Server发送请求，请求的urlPath是`apps/`，在本例中完整的请求地址是`http://localhost:8761/eureka/apps/`。根据返回的数据生成`Applications`实例。
+    最终调用的是`AbstractJerseyEurekaHttpClient.getApplicationsInternal`，该方法向Eureka Server发送请求，请求的urlPath是`apps/`，在本例中完整的请求地址是`http://localhost:8761/eureka/apps/`。根据返回的数据生成`Applications`实例。
     
 2. 如果返回的`Applications`不为null，将其保存到`DiscoveryClient.localRegionApps`变量中
 
@@ -363,7 +363,7 @@ class CacheRefreshThread implements Runnable {
 
 1. 调用`EurekaHttpClientDecorator.getDelta`方法，
 
-    最终调用的是`AbstractJerseryEurekaHttpClient.getApplicationsInternal`，该方法向Eureka Server发送请求，请求的urlPath是`apps/delta`，在本例中完整的请求地址是`http://localhost:8761/eureka/apps/delta`。根据返回的数据生成`Applications`实例。
+    最终调用的是`AbstractJerseyEurekaHttpClient.getApplicationsInternal`，该方法向Eureka Server发送请求，请求的urlPath是`apps/delta`，在本例中完整的请求地址是`http://localhost:8761/eureka/apps/delta`。根据返回的数据生成`Applications`实例。
     
 2. 如果返回的delta为null，则调用`getAndStoreFullRegistry`获取全量的数据
 3. 调用`Discovery.updateDelta`更新增量服务信息
