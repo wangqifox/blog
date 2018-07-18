@@ -300,9 +300,9 @@ public void run() {
 
 注册服务实例信息的任务在`DiscoveryClient.register`方法中，其最终调用的方法是`AbstractJerseyEurekaHttpClient.register(InstanceInfo info)`。该方法向Eureka Server发送POST请求，请求的urlPath是`apps/EUREKA-CLIENT`，`EUREKA-CLIENT`是服务实例的名称，在本例中完整的请求地址是`http://localhost:8761/eureka/apps/EUREKA-CLIENT`。将服务实例信息InstanceInfo通过POST请求发送给Eureka Server完成注册。
 
-#### 拉取服务清单的定时任务
+#### 刷新服务列表缓存的定时任务
 
-拉取服务清单的定时任务由以下代码启动:
+刷新服务列表缓存的定时任务由以下代码启动:
 
 ```java
 scheduler.schedule(
@@ -418,7 +418,25 @@ private class HeartbeatThread implements Runnable {
 
 服务下线的任务在`Discovery.unregister`方法中，其最终调用的方法是`AbstractJerseyEurekaHttpClient.cancel(String appName, String id)`。该方法向Eureka Server发送DELETE请求，请求的urlPath是`apps/EUREKA-CLIENT/wangqideimac.lan:eureka-client:8762`，其中`EUREEKA-CLIENT`表示服务名称，`wangqideimac.lan:eureka-client:8762`表示服务id。在本例中完整的请求地址是`http://localhost:8761/eureka/apps/EUREKA-CLIENT/wangqideimac.lan:eureka-client:8762`。
 
+# 总结
 
+经过前文的总结，我们可以看到，服务注册的过程是围绕`CloudEurekaClient`来进行的，它的父类`DiscoveryClient`在初始化的过程中会调用`initScheduledTasks`方法，其中会创建三个定时任务：
+
+- 服务注册。
+    
+    调用`DiscoveryClient.register`方法。向Eureka Server发送请求，请求的urlPath是"apps/{app_name}"，app_name是服务实例的名称。将服务实例信息InstanceInfo通过POST请求发送给Eureka Server完成注册。
+    
+    本示例完整的请求实例："http://localhost:8761/eureka/apps/EUREKA-CLIENT/"
+    
+- 服务续约。
+
+    调用`DiscoveryClient.renew`方法。向Eureka Server发送请求，请求的urlPath是"apps/{app_name}/{id}:8762?status={status}&lastDirtyTimestamp={timestamp}"，其中app_name表示服务名称，id表示服务id，status表示服务的状态，timestamp表示实例更新的时间。
+    
+    本示例完整的请求实例："http://localhost:8761/eureka/apps/EUREKA-CLIENT/wangqideimac.lan:eureka-client:8762?status=UP&lastDirtyTimestamp=1530096210220"
+
+- 刷新服务列表缓存。调用`DiscoveryClient.fetchRegistry`方法，
+
+    向Eureka Server发送请求，全量请求的urlPath是"apps/"，增量请求的urlPath是"apps/delta"
 
 
 > http://blog.didispace.com/spring-cloud-eureka-register-detail/
