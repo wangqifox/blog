@@ -211,9 +211,30 @@ public void add() throws InterruptedException {
 
 可以看到，经过20次调用失败后，断路器打开。
 
+# 重试
 
+Feign的重试依赖于Ribbon，因此只需要加入如下Ribbon的配置就可以实现重试：
 
+```
+eureka-client:
+  ribbon:
+    ConnectTimeout: 250
+    ReadTimeout: 250
+    OkToRetryOnAllOperations: true
+    MaxAutoRetriesNextServer: 3
+    MaxAutoRetries: 1
+```
 
+如果要进行全局配置，进行如下配置：
+
+```
+ribbon:
+  ConnectTimeout: 250
+  ReadTimeout: 250
+  OkToRetryOnAllOperations: true
+  MaxAutoRetriesNextServer: 3
+  MaxAutoRetries: 1
+```
 
 
 
