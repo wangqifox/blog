@@ -225,7 +225,7 @@ eureka-client:
     MaxAutoRetries: 1
 ```
 
-如果要进行全局配置，进行如下配置：
+如果要进行全局配置，加入如下配置：
 
 ```
 ribbon:
