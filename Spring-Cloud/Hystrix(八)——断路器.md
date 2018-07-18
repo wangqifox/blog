@@ -439,6 +439,12 @@ call times:25 result: fallback:  isCircuitBreakerOpen: false
 
 我们看到，前10此命令执行有两次失败，于是熔断器被打开，11到20次执行全部快速失败。5s后熔断器关闭，命令可以再次尝试执行。
 
+# 总结
+
+总体来说，Hystrix的断路器是一个防止重复并发请求失败服务的机制，它的执行流程如下：
+
+1. 在一定时间内（HystrixCommandProperties.metricsRollingStatisticalWindowInMilliseconds，默认为10000ms），请求次数达到一定阈值(HystrixCommandProperties.circuitBreakerRequestVolumeThreshold，默认为20)，且错误率达到一定阈值（HystrixCommandProperties.circuitBreakerErrorThresholdPercentage，默认为50%），熔断器将从闭路转换成开路。开路状态下，所有请求直接走失败回退逻辑。
+2. 经过一定的时间（休眠窗口，HystrixCommandProperties.circuitBreakerSleepWindowInMilliseconds，默认为5000ms），后续第一个请求将会被允许通过熔断器（半开状态），若该请求失败，熔断器又进入开路状态，且在休眠窗口内保持此状态；若该请求成功，熔断器将进入闭路状态。
 
 
 
