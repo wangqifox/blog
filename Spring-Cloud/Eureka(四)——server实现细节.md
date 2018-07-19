@@ -503,67 +503,104 @@ public void evict(long additionalLeaseMs) {
 
 1. 调用`PeerAwareInstanceRegistry.isLeaseExpirationEnabled`方法判断是否允许剔除失效服务。
 
-    ```java
-    @Override
-    public boolean isLeaseExpirationEnabled() {
-        if (!isSelfPreservationModeEnabled()) {
-            // The self preservation mode is disabled, hence allowing the instances to expire.
-            return true;
-        }
-        return numberOfRenewsPerMinThreshold > 0 && getNumOfRenewsInLastMin() > numberOfRenewsPerMinThreshold;
+```java
+@Override
+public boolean isLeaseExpirationEnabled() {
+    if (!isSelfPreservationModeEnabled()) {
+        // The self preservation mode is disabled, hence allowing the instances to expire.
+        return true;
     }
-    ```
+    return numberOfRenewsPerMinThreshold > 0 && getNumOfRenewsInLastMin() > numberOfRenewsPerMinThreshold;
+}
+```
     
     该方法和自我保护机制有关，如果`Renews(last min) < Renews threshold`，表示Eureka Server进入了自我保护模式，这时Eureka Server不再剔除失效服务。
     
 2. 遍历整个服务注册表，调用`Lease.isExpired`方法判断租约是否过期，将过期的租约加入`expiredLeases`  
 
-    ```java
-    public boolean isExpired(long additionalLeaseMs) {
-        return (evictionTimestamp > 0 || System.currentTimeMillis() > (lastUpdateTimestamp + duration + additionalLeaseMs));
-    }
-    ``` 
+```java
+public boolean isExpired(long additionalLeaseMs) {
+    return (evictionTimestamp > 0 || System.currentTimeMillis() > (lastUpdateTimestamp + duration + additionalLeaseMs));
+}
+``` 
 
 3. 计算最大允许清理租约的数量，以及允许清理租约的数量
 
     即使Eureka Server关闭自我保护机制，如果使用`renewalPercentThreshold = 0.85`默认配置，结果会是分批逐步过期，举个例子：
     
-    ```
-    // 假设 20 个租约，其中有 10 个租约过期。
+```
+// 假设 20 个租约，其中有 10 个租约过期。
 
-    // 第一轮执行开始
-    int registrySize = 20;
-    int registrySizeThreshold = (int) (20 * 0.85) = 17;
-    int evictionLimit = 20 - 17 = 3;
-    int toEvict = Math.min(10, 3) = 3;
-    // 第一轮执行结束，剩余 17 个租约，其中有 7 个租约过期。
+// 第一轮执行开始
+int registrySize = 20;
+int registrySizeThreshold = (int) (20 * 0.85) = 17;
+int evictionLimit = 20 - 17 = 3;
+int toEvict = Math.min(10, 3) = 3;
+// 第一轮执行结束，剩余 17 个租约，其中有 7 个租约过期。
     
-    // 第二轮执行开始
-    int registrySize = 17;
-    int registrySizeThreshold = (int) (17 * 0.85) = 14;
-    int evictionLimit = 17 - 14 = 3;
-    int toEvict = Math.min(7, 3) = 3;
-    // 第二轮执行结束，剩余 14 个租约，其中有 4 个租约过期。
+// 第二轮执行开始
+int registrySize = 17;
+int registrySizeThreshold = (int) (17 * 0.85) = 14;
+int evictionLimit = 17 - 14 = 3;
+int toEvict = Math.min(7, 3) = 3;
+// 第二轮执行结束，剩余 14 个租约，其中有 4 个租约过期。
     
-    // 第三轮执行开始
-    int registrySize = 14;
-    int registrySizeThreshold = (int) (14 * 0.85) = 11;
-    int evictionLimit = 14 - 11 = 3;
-    int toEvict = Math.min(4, 3) = 3;
-    // 第三轮执行结束，剩余 11 个租约，其中有 1 个租约过期。
+// 第三轮执行开始
+int registrySize = 14;
+int registrySizeThreshold = (int) (14 * 0.85) = 11;
+int evictionLimit = 14 - 11 = 3;
+int toEvict = Math.min(4, 3) = 3;
+// 第三轮执行结束，剩余 11 个租约，其中有 1 个租约过期。
     
-    // 第四轮执行开始
-    int registrySize = 11;
-    int registrySizeThreshold = (int) (11 * 0.85) = 9;
-    int evictionLimit = 11 - 9 = 2;
-    int toEvict = Math.min(1, 2) = 1;
-    // 第四轮执行结束，剩余 10 个租约，其中有 0 个租约过期。结束。
-    ```
+// 第四轮执行开始
+int registrySize = 11;
+int registrySizeThreshold = (int) (11 * 0.85) = 9;
+int evictionLimit = 11 - 9 = 2;
+int toEvict = Math.min(1, 2) = 1;
+// 第四轮执行结束，剩余 10 个租约，其中有 0 个租约过期。结束。
+```
 
     是否开启自我保护的差别，在于是否执行清理过期租约的逻辑。如果想关闭分批逐步过期，设置`renewalPercentThreshold = 0`
     
 4. 随机清理过期的租约。由于租约是按照应用顺序添加到数据，通过随机的方式，尽量避免单个应用被全部过期。调用`AbstractInstanceRegistry.internalCancel`方法下线过期的服务。
 
+# 总结
+
+Eureka Server中的关键类是`InstanceRegistry`，在其中完成以下的几个关键任务：
+
+- 服务注册
+
+    调用`AbstractInstanceRegistry.register`方法注册服务，再调用`replicateToPeers`方法向其他Eureka Server节点(Peer)做状态同步。
+    
+    服务列表保存在一个嵌套的ConcurrentHashMap中：`ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry`：第一层hash map的key是app name，也就是服务的应用名字，本例中为`EUREKA-CLIENT`。第二层hash map的key是instance id，也就是实例的id，本例中为`wangqideimac.lan:eureka-client:8762`
+
+- 服务续约
+
+    调用`AbstractInstanceRegistry.renew`方法续约服务，再调用`replicateToPeers`方法向其他Eureka Server节点(Peer)做状态同步。
+
+    续约的主要操作是更新`registry`中保存的服务实例的续约信息(`Lease`)，刷新其中的最近续约时间。
+
+- 服务下线
+
+    调用`AbstractInstanceRegistry.cancel`方法下线服务（最终调用的是`AbstractInstanceRegistry.internalCancel`方法），再调用`replicateToPeers`方法向其他Eureka Server节点(Peer)做状态同步。
+
+    将相应的服务id从服务注册表`registry`中删除。如果服务注册表中不存在指定的服务id则返回`false`，否则调用`Lease.cancel`方法将`evictionTimestamp`设置为当前时间并返回`true`
+
+- 服务获取
+
+    服务获取功能在`ApplicationsResource.getContainers`方法中执行。它从缓存`ResponseCacheImpl`中获取服务信息。`ResponseCacheImpl`中有一个`LoadingCache`类型的变量`readWriteCacheMap`，其中保存服务信息的缓存。
+
+- 同步服务到其他的Eureka Server节点
+
+    调用`PeerAwareInstanceRegistryImpl.replicateInstanceActionsToPeers`。
+    
+    将服务信息复制到另一个Eureka Server节点节点中。根据服务不同的操作，向Eureka Server发送不同的HTTP请求。
+
+- 剔除失效服务
+
+    剔除失效服务是一个定时任务，它在`AbstractInstanceRegistry#EvictionTask`类中完成。其间隔时间在`EurekaServerConfig.getEvictionIntervalTimerInMs()`中配置，默认为60s。
+    
+    遍历服务列表，将失效的服务实例添加到失效服务列表中（失效服务指的是超过一定时间没有再次续约的服务，该时间由`LeaseInfo.durationInSecs`控制。默认为`DEFAULT_LEASE_DURATION`，即90秒），然后从中随机剔除掉一批失效服务（剔除的量由`renewalPercentThreshold`控制，默认为`0.85`）。
 
 [1]: /articles/Spring-Cloud/Eureka(三)——client注册过程.html
 
