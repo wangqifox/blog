@@ -241,7 +241,7 @@ public class DiscoveryClient implements EurekaClient {
 
 #### InstanceInfoReplicator服务注册的定时任务
 
-`InstanceInfoReplicator`类的功能是更新本地的服务实例信息，并将本地的服务实例信息复制到注册服务中。
+`InstanceInfoReplicator`类的功能是更新本地的服务实例信息，并将本地的服务实例信息复制到注册服务中。其定时周期由`EurekaClientConfig.getInstanceInfoReplicationIntervalSeconds()`控制，默认为30秒。
 
 `DiscoveryClient.initScheduledTasks()`方法中调用`InstanceInfoReplicator.start()`方法启动`InstanceInfoReplicator`：
 
@@ -318,6 +318,8 @@ scheduler.schedule(
         registryFetchIntervalSeconds, TimeUnit.SECONDS);
 ```
 
+其定时周期由`EurekaClientConfig.getRegistryFetchIntervalSeconds()`控制，默认为30秒。
+
 在`TimedSupervisorTask`中也是通过循环调用`schedule`的方式形成一个周期任务，以定时执行`CacheRefreshThread`线程。
 
 `CacheRefreshThread`的任务就是调用`refreshRegistry`方法：
@@ -388,7 +390,7 @@ scheduler.schedule(
         renewalIntervalInSecs, TimeUnit.SECONDS);
 ```
 
-在`TimedSupervisorTask`中也是通过循环调用`schedule`的方式形成一个周期任务，以定时执行`HeartbeatThread`线程。
+在`TimedSupervisorTask`中也是通过循环调用`schedule`的方式形成一个周期任务，以定时执行`HeartbeatThread`线程。其定时周期由`LeaseInfo.renewalIntervalInSecs`变量控制，默认为`DEFAULT_LEASE_RENEWAL_INTERVAL`，即30秒。
 
 `HeartbeatThread`的任务就是调用`renew`方法：
 
@@ -424,11 +426,15 @@ private class HeartbeatThread implements Runnable {
 
 - 服务注册。
     
+    其定时周期由`EurekaClientConfig.getInstanceInfoReplicationIntervalSeconds()`控制，默认为30秒。
+    
     调用`DiscoveryClient.register`方法。向Eureka Server发送请求，请求的urlPath是"apps/{app_name}"，app_name是服务实例的名称。将服务实例信息InstanceInfo通过POST请求发送给Eureka Server完成注册。
     
     本示例完整的请求实例："http://localhost:8761/eureka/apps/EUREKA-CLIENT/"
     
 - 服务续约。
+
+    其定时周期由`LeaseInfo.renewalIntervalInSecs`变量控制，默认为`DEFAULT_LEASE_RENEWAL_INTERVAL`，即30秒。
 
     调用`DiscoveryClient.renew`方法。向Eureka Server发送请求，请求的urlPath是"apps/{app_name}/{id}:8762?status={status}&lastDirtyTimestamp={timestamp}"，其中app_name表示服务名称，id表示服务id，status表示服务的状态，timestamp表示实例更新的时间。
     
@@ -436,6 +442,8 @@ private class HeartbeatThread implements Runnable {
 
 - 刷新服务列表缓存。调用`DiscoveryClient.fetchRegistry`方法，
 
+    其定时周期由`EurekaClientConfig.getRegistryFetchIntervalSeconds()`控制，默认为30秒。
+    
     向Eureka Server发送请求，全量请求的urlPath是"apps/"，增量请求的urlPath是"apps/delta"
 
 
