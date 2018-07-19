@@ -513,8 +513,8 @@ public boolean isLeaseExpirationEnabled() {
     return numberOfRenewsPerMinThreshold > 0 && getNumOfRenewsInLastMin() > numberOfRenewsPerMinThreshold;
 }
 ```
-    
-    该方法和自我保护机制有关，如果`Renews(last min) < Renews threshold`，表示Eureka Server进入了自我保护模式，这时Eureka Server不再剔除失效服务。
+
+该方法和自我保护机制有关，如果`Renews(last min) < Renews threshold`，表示Eureka Server进入了自我保护模式，这时Eureka Server不再剔除失效服务。
     
 2. 遍历整个服务注册表，调用`Lease.isExpired`方法判断租约是否过期，将过期的租约加入`expiredLeases`  
 
@@ -522,7 +522,7 @@ public boolean isLeaseExpirationEnabled() {
 public boolean isExpired(long additionalLeaseMs) {
     return (evictionTimestamp > 0 || System.currentTimeMillis() > (lastUpdateTimestamp + duration + additionalLeaseMs));
 }
-``` 
+```
 
 3. 计算最大允许清理租约的数量，以及允许清理租约的数量
 
@@ -560,8 +560,8 @@ int toEvict = Math.min(1, 2) = 1;
 // 第四轮执行结束，剩余 10 个租约，其中有 0 个租约过期。结束。
 ```
 
-    是否开启自我保护的差别，在于是否执行清理过期租约的逻辑。如果想关闭分批逐步过期，设置`renewalPercentThreshold = 0`
-    
+是否开启自我保护的差别，在于是否执行清理过期租约的逻辑。如果想关闭分批逐步过期，设置`renewalPercentThreshold = 0`
+
 4. 随机清理过期的租约。由于租约是按照应用顺序添加到数据，通过随机的方式，尽量避免单个应用被全部过期。调用`AbstractInstanceRegistry.internalCancel`方法下线过期的服务。
 
 # 总结
