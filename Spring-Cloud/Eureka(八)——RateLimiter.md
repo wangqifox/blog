@@ -97,9 +97,14 @@ private void refillToken(int burstSize, long averageRate, long currentTimeMillis
                 : refillTime + newTokens * rateToMsConversion / averageRate;
         if (lastRefillTime.compareAndSet(refillTime, newRefillTime)) {
             while (true) {  // 循环直到令牌填充完成
+                // 获取当前被消耗掉的令牌数
                 int currentLevel = consumedTokens.get();
-                int adjustedLevel = Math.min(currentLevel, burstSize); // In case burstSize decreased
+                // 将当前被消耗掉的令牌数和burstSize(桶大小)比较，选择较小的那个。桶大小可能会减小
+                int adjustedLevel = Math.min(currentLevel, burstSize);
+                // 将(adjustedLevel - newTokens)作为令牌消耗数，newTokens表示当前补充了多少个令牌。
+                // 如果(adjustedLevel - newTokens < 0)表示桶中的令牌已经溢出了。这时候将令牌消耗数设为0，因为令牌消耗数是不能为负数的。
                 int newLevel = (int) Math.max(0, adjustedLevel - newTokens);
+                // 设置新的令牌消耗数
                 if (consumedTokens.compareAndSet(currentLevel, newLevel)) {
                     return;
                 }
@@ -128,7 +133,7 @@ private void refillToken(int burstSize, long averageRate, long currentTimeMillis
 private boolean consumeToken(int burstSize) {
     while (true) {
         int currentLevel = consumedTokens.get();
-        // 没有令牌，获取令牌失败
+        // 当前消耗的令牌数大于等于桶的大小，说明桶里的令牌都已经消耗完了。这时获取令牌失败
         if (currentLevel >= burstSize) {
             return false;
         }
