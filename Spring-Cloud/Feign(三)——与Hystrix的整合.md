@@ -20,7 +20,7 @@ Feign提供了Hystrix的支持，只需要简单的几个配置，就可以实�
 </dependency>
 ```
 
-2. 在`application.yml`文件中打开Feign的Hystrix的开关
+2. 在`application.yml`文件中打开Feign的Hystrix的开关
 
 ```
 feign:
