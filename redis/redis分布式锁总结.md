@@ -77,20 +77,24 @@ unlock() {
 1. 在锁竞争较高的情况下，会出现value不断被覆盖，但是没有一个client获取到锁。
 2. 在获取锁的过程中不断地修改原有锁的数据，设想一种场景C1, C2竞争锁，C1获取到了锁，C2执行了GETSET操作修改了C1锁的过期时间，如果C1没有正确释放锁，锁的过期时间被延长，其他client需要等待更久的时间
 
+该方案详见：[https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version1_1/RedisLock.java](https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version1_1/RedisLock.java)
+
 # 版本2
 
 这个版本基于SETNX命令。
 
 ```
 lock() {
-    SETNX key seconds
+    SET key 1 EX timeout NX
 }
 unlock() {
     delete key
 }
 ```
 
-Redis 2.6.12版本后SETNX增加了过期时间参数，这样就解决了两条命令无法保证原子性的问题。但是设想下面一个场景：
+Redis 2.6.12后`SET`提供了一个`NX`参数，等同于`SETNX`命令（官方文档上提醒后面的版本有可能去掉`SETNX` `SETEX` `PSETEX`，并用`SET`命令代替）；提供了一个`EX`参数，设置键的过期时间。这样就解决了两条命令无法保证原子性的问题。
+
+但是设想下面一个场景：
 
 1. C1成功获取到了锁，之后C1因为GC进入等待或者未知原因导致任务执行过长，最后在锁失效前C1没有主动释放锁
 2. C2在C1的锁超时后获取到锁，并且开始执行，这个时候C1和C2都同时执行，会因重复执行造成数据不一致等未知情况
@@ -105,11 +109,13 @@ Redis 2.6.12版本后SETNX增加了过期时间参数，这样就解决了两条
 1. 由于C1的停顿导致C1和C2同时获得了锁并且同时在执行，在业务实现中要求必须保证幂等性
 2. C1释放了不属于C1的锁
 
+该方案详见：[https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version2/RedisLock.java](https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version2/RedisLock.java)
+
 # 版本3
 
 ```
 lock() {
-    SETNX key unixTimestamp seconds
+    SET key unixTimestamp EX timeout NX
 }
 unlock() {
     EVAL(
@@ -128,6 +134,8 @@ unlock() {
 该方案存在的问题：
 
 1. 如果在并发极高的场景下，比如抢红包场景，可能存在unixTimestamp重复问题，另外由于不能保证分布式环境下的物理时钟一致性，也可能存在unixTimestamp重复问题，只不过极少情况下会遇到。
+
+该方案详见：[https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version3/RedisLock.java](https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version3/RedisLock.java)
 
 # 版本3.1
 
@@ -150,18 +158,22 @@ unlock() {
 该版本和版本3的实现基本一致，有两处优化：
 
 1. 使用一个自增的唯一id代替时间戳来规避版本3提到的时钟问题
-2. 使用`SET`代替`SETNX`命令。Redis 2.6.12后`SET`同样提供了一个`NX`参数，等同于`SETNX`命令，官方文档上提醒后面的版本有可能去掉`SETNX` `SETEX` `PSETEX`，并用`SET`命令代替
+2. 使用`SET`代替`SETNX`命令。
 
 这个方案是目前最优的分布式锁方案，但是仍然有以下两个问题：
 
 1. 没有解决版本2提出的问题。当线程A执行完成前，锁就过期了，这时候线程B可以成功获得锁，此时有两个线程在同时访问代码块，仍然是不完美的。
 2. 如果Redis是集群环境，由于Redis集群数据同步为异步，假设在Master节点获取到锁后未完成数据同步情况下Master节点crash，此时在新的Master节点依然可以获取锁，所以多个client同时获取到了锁。
 
+该方案详见：[https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version3_1/RedisLock.java](https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version3_1/RedisLock.java)
+
 # 版本3.2
 
 针对版本3.1中的第一个问题，我们可以让获得锁的线程开启一个守护线程，用来给快要过期的锁"续命"。
 
 守护线程定期执行expire指令，为快过期的锁"续命"。当持有锁的线程执行完后，显式关掉守护线程。如果持有锁的节点突然断电，由于持有锁的线程和守护线程在同一个进程，守护线程也会停下，这把锁到了超时的时候，没人给他续命，也就自动释放了。
+
+该方案详见：[https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version3_2/AutoExpireRedisLock.java](https://github.com/wangqifox/redis-lock/blob/master/src/main/java/love/wangqi/version3_2/AutoExpireRedisLock.java)
 
 # 分布式Redis锁：Redlock
 
