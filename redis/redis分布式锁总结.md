@@ -186,11 +186,11 @@ unlock() {
 
 不论是基于`SETNX`版本的Redis单实例分布式锁，还是Redlock分布式锁，都是为了保证以下特性：
 
-1. 安全性：在同一时间不允许多个Client同时持有锁
+1. 安全性：独享（相互排斥），在任意一个时刻，只有一个客户端持有锁。
 2. 活性：
 
-    - 死锁：锁最终应该能够被释放，即使Client端crash或者出现网络分区(通常基于超时机制)
-    - 容错性：只要超过半数Redis节点可用，锁都能被正确获取和释放
+    - 无死锁：即便持有锁的客户端崩溃(crashed)或者网络被分裂(gets partitioned)，锁仍然可以被获取。
+    - 容错性：只要超过半数Redis节点可用，锁都能被正确获取和释放。
 
 所以在开发或者使用分布式锁的过程中要保证安全性和活性，避免出现不可预测的结果。
 
@@ -217,5 +217,6 @@ unlock() {
 
 > http://tech.dianwoda.com/2018/04/11/redisfen-bu-shi-suo-jin-hua-shi/
 > https://mp.weixin.qq.com/s?__biz=MzIxMjE5MTE1Nw==&mid=2653194065&idx=1&sn=1baa162e40d48ce9b44ea5c4b2c71ad7&chksm=8c99f58bbbee7c9d5b5725da5ee38fe0f89d7a816f3414806785aea0fe5ae766769600d3e982&scene=21#wechat_redirect
+> http://redis.cn/topics/distlock.html
 
 
