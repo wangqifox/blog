@@ -410,7 +410,9 @@ inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     
 
 这是一段小汇编，`__asm__`说明是ASM汇编，`volatile`禁止编译器优化。
 
-`os::is_MP()`判断当前系统是否为多核系统，如果是就给总线加锁，所以同一芯片上的其他处理器就暂时不能通过总线访问内存，保证了该指令在多处理器环境下的原子性。
+`os::is_MP()`判断当前系统是否为多核系统。如果当前是多核系统，返回1，否则返回0。
+
+`LOCK_IF_MP(%4)`会根据`mp`的值来决定是否为`cmpxchgl`执行添加lock前缀。如果是多核系统就添加`lock`，这时候会给总线加锁，所以同一芯片上的其他处理器就暂时不能通过总线访问内存，保证了该指令在多处理器环境下的原子性。
 
 在正式解读这段汇编前，我们来了解下嵌入汇编的基本格式：
 
@@ -487,11 +489,167 @@ public interface Lock {
 - 性能上来说，在资源竞争不激烈的情形下，`Lock`性能稍微比`synchronized`差点（编译程序通常会尽可能地进行优化`synchronized`）。但是当同步非常激烈的时候，`synchronized`的性能一下能下降好几十倍。而`ReentrantLock`却还能维持常态。
 
 
+# 性能对比
+
+前文我们描述了四种同步方式的原理，通过他们的原理我们大概可以判断他们之间性能的差别。现在让我们通过程序来实际测试一下他们的性能。
+
+代码如下。启动10个线程并发执行，每个线程循环多次来读或写变量，得出他们的运行时间来比较各自同步方式的性能。
+
+```java
+public class LockMultiThreadTest {
+    int normalVar = 0;
+    volatile int volatileVar = 0;
+    final int loop = 20000000;
+    int temp;
+    Lock lock = new ReentrantLock();
+    AtomicInteger atomicInteger = new AtomicInteger(0);
+
+    private void normalRead() {
+        temp = normalVar;
+    }
+
+    private void normalWrite(int n) {
+        normalVar = n;
+    }
+
+    @Test
+    public void normalReadTest() {
+        multiThreadRun(e -> normalRead());
+    }
+
+    @Test
+    public void normalWriteTest() {
+        multiThreadRun(e -> normalWrite(e));
+    }
+
+    private void volatileRead() {
+        temp = volatileVar;
+    }
+
+    private void volatileWrite(int n) {
+        volatileVar = n;
+    }
+
+    @Test
+    public void volatileReadTest() {
+        multiThreadRun(e -> volatileRead());
+    }
+
+    @Test
+    public void volatileWriteTest() {
+        multiThreadRun(e -> volatileWrite(e));
+    }
+
+    private synchronized void synchronizedRead() {
+        temp = normalVar;
+    }
+
+    private synchronized void synchronizedWrite(int n) {
+        normalVar = n;
+    }
+
+    @Test
+    public void synchronizedReadTest() {
+        multiThreadRun(e -> synchronizedRead());
+    }
+
+    @Test
+    public void synchronizedWriteTest() {
+        multiThreadRun(e -> synchronizedWrite(e));
+    }
+
+    private void casRead() {
+        temp = atomicInteger.get();
+    }
+
+    private void casWrite(int n) {
+        atomicInteger.getAndIncrement();
+    }
+
+    @Test
+    public void casReadTest() {
+        multiThreadRun(e -> casRead());
+    }
+
+    @Test
+    public void casWriteTest() {
+        multiThreadRun(e -> casWrite(e));
+    }
+
+    private void lockRead() {
+        lock.lock();
+        try {
+            temp = normalVar;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void lockWrite(int n) {
+        lock.lock();
+        try {
+            normalVar = n;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Test
+    public void lockReadTest() {
+        multiThreadRun(e -> lockRead());
+    }
+
+    @Test
+    public void lockWriteTest() {
+        multiThreadRun(e -> lockWrite(e));
+    }
 
 
+    public void multiThreadRun(Consumer<Integer> action) {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < loop; i++) {
+                    action.accept(i);
+                }
+            }
+        };
 
+        List<Thread> threadList = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            threadList.add(new Thread(runnable));
+        }
+        threadList.forEach(Thread::start);
+        threadList.forEach(thread -> {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+}
+```
 
+运行结果如下：
 
+![lock-performance](media/lock-performance.png)
+
+通过上面的测试结果我们可以得出如下结论：
+
+- 不做同步措施的情况下，性能是最好的，并且读写的性能基本没有差别
+- `CAS`与`volatile`的性能相近，`volatile`的性能稍好。但是他们的读写性能相差很大，相比于读操作，写操作需要耗费好几倍的时间。
+
+    从原理上来说，`CAS`与`volatile`在读取变量的时候指令上不会加上`lock`前缀，但是在写变量的时候会。指令的`lock`前缀是一个开销比较大的操作，它有以下三个影响：
+    
+    - 它会给内存总线加锁，同一芯片上的其他处理器就暂时不能通过总线访问内存，保证了该指令在多处理器环境下的原子性。
+    - 禁止该指令与之前和之后的读和写指令重排序
+    - 把写缓冲区中的所有数据刷新到内存中
+
+- `Lock`的性能比`CAS`与`volatile`更差，因为它是代码实现的锁，所需要的指令比起`CAS`与`volatile`来说要多得多。而且它读写的性能没有差别，因为无论是读还是写加锁解锁的步骤是一样的。
+- `synchronized`相对来说是性能是最差的，"重量级锁"的名称名不虚传。虽然如此，但是如果是线程竞争不激烈的情况下，`synchronized`的性能并不差，甚至比`Lock`要好，这也说明了JVM对`synchronized`锁优化的效果。我们将线程数减少到两个，执行结果如下：
+
+![lock-performance1](media/lock-performance1.png)
 
 
 
