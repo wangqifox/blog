@@ -116,6 +116,24 @@ public class HeapOOM {
 
 新生代又分为`Eden`、`From Survivor`、`To Survivor`。这样划分的目的是为了使`JVM`能够更好地管理堆内存中的对象，包括内存的分派以及回收。默认比例为`Eden:From:To = 8:1:1`（可以通过参数`-XX:SurvivorRatio`来设定，`-XX:SurvivorRatio=8`表示`Eden`与一个`Survivor`空间比例为`8:1`）
 
+一般新建的对象会分配到`Eden`区。这些对象经过第一次`Minor GC`后，如果仍然存活，将会被移到`Survivor`区。在`Survivor`每熬过一轮`Minor GC`年龄就增加1
+
+当年龄达到一定程度是（年龄阈值，默认为`15`，可以通过`-XX:MaxTenuringThreshold`来设置），就会被移动到老年代。
+
+`from`和`to`之间会经常互换角色，`from`变成`to`，`to`变成`from`。每次GC时，把`Eden`存活的对象和`From Survivor`中存活且没超过年龄阈值的对象复制到`To Survivor`中，`From Survivor`清空，变成`To Survivor`。
+
+GC分为两种：
+
+- `Minor GC`是发生在新生代中的垃圾收集动作，所采用的是复制算法，所采用的是复制算法，因为`Minor GC`比较频繁，因此一般回收速度较快。
+- `Full GC`是发生在老年代的垃圾收集动作，所采用的是`标记-清除`算法，速度比`Minor GC`慢10倍以上
+
+大对象直接进入老年代。比如很长的字符串以及数组。通过设置`-XX:PretenureSizeThreshold`，令大于这个值的对象直接在老年代分配。这样做是为了避免在`Eden`和两个`Survivor`之间发生大量的内存复制。
+
+什么时候发生`Minor GC`？什么时候发生`Full GC`？
+
+- 当新生代`Eden`区没有足够的空间进行分配时，虚拟机将发起一次`Minor GC`
+- 老年代空间不足时发起一次`Full GC`
+
 我们以下面的命令来执行程序：
 
 ```
