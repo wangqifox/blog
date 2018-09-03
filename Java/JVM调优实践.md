@@ -212,7 +212,7 @@ jmap -dump:live,format=b,file=dump.hprof 11172
 
 其中`11172`是进程ID
 
-然后将`dump.hprof`文件使用VisualVM来打开
+然后将`dump.hprof`文件使用VisualVM来打开
 
 ![dump_hprof](media/dump_hprof.png)
 
