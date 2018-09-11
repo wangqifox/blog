@@ -9,6 +9,10 @@ date: 2018/08/09 09:11:00
 
 <!-- more -->
 
+Future接口是Java多线程Future模式的实现。Future模式是多线程设计常用的一种设计模式。
+
+Future模式可以理解成：我有一个任务，提交给了Future，Future替我完成这个任务。期间我自己可以去做任何想做的事情。一段时间后，我便可以从Future那儿取出结果。
+
 # Callable与Runnable
 
 `java.lang.Runnable`是一个接口，在它里面只声明了一个`run()`方法：
@@ -702,5 +706,6 @@ public boolean isDone() {
 > https://www.cnblogs.com/dolphin0520/p/3949310.html
 > https://www.jianshu.com/p/949d44f3d9e3
 > https://blog.csdn.net/codershamo/article/details/51901057
+> https://www.jianshu.com/p/dff9063e1ab6
 
 
