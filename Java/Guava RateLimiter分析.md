@@ -332,6 +332,8 @@ static RateLimiter create(
 *          0 thresholdPermits maxPermits
 ```
 
+简单来说，上图展示了一种机制：当前存储的令牌数(`storedPermits`)越多，生成令牌的间隔时间就越长。当存储的令牌数到达最大值(`maxPermits`)生成令牌的间隔时间也到达最大值(`cold interval`)。`cold interval`同时受`stable interval`和`coldFactor`的影响，是两者的乘积，`coldFactor`默认为3.0，即`cold interval`是`stable interval`的3倍。`thresholdPermits`是一个拐点，当令牌数小于`thresholdPermits`时生成令牌的间隔时间稳定在`stable interval`；当令牌数大于`thresholdPermits`时，生成令牌的间隔时间以一个固定的速率发生变化。`thresholdPermits`等于预热时间内产生令牌数量的一半。
+
 ```java
 static final class SmoothWarmingUp extends SmoothRateLimiter {
     private final long warmupPeriodMicros;
@@ -376,7 +378,7 @@ static final class SmoothWarmingUp extends SmoothRateLimiter {
 
 ## storedPermitsToWaitTime方法
 
-与`SmoothBursty`中的`storedPermitsToWaitTime`方法（直接返回`0`）不同，与`SmoothWarmingUp`中的`storedPermitsToWaitTime`方法需要根据令牌数与thresholdPermits的关系来计算等待的时间。
+与`SmoothBursty`中的`storedPermitsToWaitTime`方法（直接返回`0`）不同，`SmoothWarmingUp`中的`storedPermitsToWaitTime`方法需要根据令牌数与thresholdPermits的关系来计算等待的时间。
 
 ```java
 long storedPermitsToWaitTime(double storedPermits, double permitsToTake) {
