@@ -32,7 +32,7 @@ public interface ScheduledExecutorService extends ExecutorService {
                                                   long period,
                                                   TimeUnit unit);
     /**
-     * 在给定的delay延时之后，执行command任务，然后以period为周期循环执行任务
+     * 在给定的initialDelay延时之后，执行command任务，之后的任务总是延时delay时间之后执行下一次的任务
      */
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                                      long initialDelay,
