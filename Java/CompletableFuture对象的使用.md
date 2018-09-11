@@ -937,7 +937,7 @@ public void test17() {
 
 
 
-[1]: /articles/Java/Callable、Future、FutureTask原理
+[1]: /articles/Java/Callable、Future、FutureTask原理.html
 
 > https://colobu.com/2016/02/29/Java-CompletableFuture/
 > https://www.ibm.com/developerworks/cn/java/j-cf-of-jdk8/index.html
