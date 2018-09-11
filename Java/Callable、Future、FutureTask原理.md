@@ -76,6 +76,10 @@ class Task implements Callable<Integer> {
 }
 ```
 
+执行结果如下：
+
+![submit_1](media/submit_1.png)
+
 ## <T> Future<T> submit(Runnable task, T result)
 
 这个方法比较令人费解，因为Runnable无法返回运行的结果，因此我们可以传入一个result来接收结果，result不是实际的结果，它只是存储了结果。
@@ -116,6 +120,10 @@ class Task implements Runnable {
 }
 ```
 
+执行结果如下：
+
+![submit_2](media/submit_2.png)
+
 ## Future<?> submit(Runnable task)
 
 它的返回值实际上是Future<Void>，子线程是不会返回数据的。它的用途是等待子线程运行完成。
@@ -154,6 +162,8 @@ class Task implements Runnable {
     }
 }
 ```
+
+![submit_3](media/submit_3.png)
 
 # Future
 
@@ -203,7 +213,9 @@ public class FutureTask<V> implements RunnableFuture<V>
 
 RunnableFuture接口继承了Runnable接口和Future接口。
 
-因此FutureTask既可以作为Runnable被线程执行，又可以作为Future得到Callable的返回值。
+因此FutureTask既可以作为Runnable被线程执行，又可以作为Future得到Callable的返回值。继承关系如下所示：
+
+![FutureTask](media/FutureTask.png)
 
 FutureTask提供了两个构造器：
 
@@ -391,7 +403,7 @@ private static final int INTERRUPTING = 5;
 private static final int INTERRUPTED  = 6;
 ```
 
-state初始化为NEW。只有在set setException cancel方法中state才可以转变为终态。在任务完成期间，state的值可能为COMPLETING或INTERRUPTING
+`state`初始化为`NEW`。只有在`set`、`setException`、`cancel`方法中`state`才可以转变为终态。在任务完成期间，`state`的值可能为`COMPLETING`或`INTERRUPTING`
 
 state有四种可能的状态转换：
 
@@ -402,7 +414,7 @@ state有四种可能的状态转换：
 
 ### run
 
-当创建完一个Task通常会提交给`Executors`来执行，当然也可以使用Thread来执行，Thread的start()方法会调用Task的run()方法。
+当创建完一个Task通常会提交给`Executors`来执行，当然也可以使用Thread来执行，Thread的`start()`方法会调用Task的`run()`方法。
 
 ```java
 public void run() {
@@ -673,7 +685,9 @@ public boolean isDone() {
 
 如果状态不为`NEW`表示任务已经执行完了
 
+# 总结
 
+`Future`机制提供了三种功能：判断任务是否完成、中断任务、获取任务执行结果。从而使得控制任务的异步执行成为可能。
 
 
 
