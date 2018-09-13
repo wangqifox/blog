@@ -720,7 +720,10 @@ private final class Worker implements Runnable {
     4. 调用`transferTimeoutsToBuckets`方法将`timeouts`队列中新建的任务转移到所在格子的链表中
     5. 调用`HashedWheelBucket.expireTimeouts`方法执行到期的任务
 
+这里有几个值的注意的数据结构：
 
+1. 任务并不是直接放在格子中的，而是维护了一个双向链表，这种数据结构非常便于插入和移除。
+2. 新添加的任务并不直接放入格子，而是先放入一个队列中，这是为了避免多线程插入任务的冲突。在每个tick运行任务之前由worker线程自动对任务进行归集和分类，插入到对应的槽位里面。
 
 
 
