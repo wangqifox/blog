@@ -215,7 +215,7 @@ scheduleWithFixedDelay 执行完成时间：11:28:46
 
 `Executors`是一个工具类，提供了许多静态方法，根据用户选择返回不同的线程池实例。`newScheduledThreadPool`方法新建了一个`ScheduledThreadPoolExecutor`实例。
 
-`ScheduledThreadPoolExecutor`的基础关系如下：
+`ScheduledThreadPoolExecutor`的继承关系如下：
 
 ![ScheduledThreadPoolExecuto](media/ScheduledThreadPoolExecutor.png)
 
