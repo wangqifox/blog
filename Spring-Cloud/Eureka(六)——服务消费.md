@@ -246,7 +246,9 @@ public ILoadBalancer ribbonLoadBalancer(IClientConfig config,
 
 ![ZoneAwareLoadBalancer-structure](media/ZoneAwareLoadBalancer-structure.png)
 
-跟踪`ZoneAwareLoadBalancer`的构造函数：
+跟踪`ZoneAwareLoadBalancer`的构造函数，由于`ZoneAwareLoadBalancer`继承了`DynamicServerListLoadBalancer`和`BaseLoadBalancer`，因此它会首先构造`BaseLoadBalancer`和`DynamicServerListLoadBalancer`。
+
+`DynamicServerListLoadBalancer`的构造函数执行流程如下：
 
 1. 经过一系列的初始化配置
 2. 执行`restOfInit()`方法
@@ -268,9 +270,9 @@ public ILoadBalancer ribbonLoadBalancer(IClientConfig config,
 
 前文我们看到，LoadBalancer从EurekaClient中获取服务信息，这里我们看看LoadBalancer如何判断服务的可用性，如何更新服务注册信息。
 
-这个任务在`DynamicServerListLoadBalancer.updateAllServerList`方法中被创建。
+前面我们说到，`ZoneAwareLoadBalancer`继承了`BaseLoadBalancer`，它在实例化中也会执行`BaseLoadBalancer`的构造函数。
 
-在该方法中会创建`BaseLoadBalancer`的实例，在创建`BaseLoadBalancer`的构造函数中调用`setupPingTask()`开启一个PingTask任务，代码如下：
+在`BaseLoadBalancer`的构造函数中调用`setupPingTask()`开启一个PingTask任务，代码如下：
 
 ```java
 void setupPingTask() {
