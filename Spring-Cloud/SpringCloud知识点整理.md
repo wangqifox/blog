@@ -78,9 +78,9 @@ date: 2018/09/19 19:09:00
 
 - 刷新服务列表缓存的定时任务
 
-    刷新服务列表即向`Eureka Server`获取新的服务列表，更新本地的缓存。任务周期默认为30s
+    刷新服务列表即向`Eureka Server`获取新的服务列表，更新本地的缓存。任务周期默认为30s
     
-    - 重新获取`Eureka Server`的地址，因为这些配置有可能发生动态修改
+    - 重新获取`Eureka Server`的地址，因为这些配置有可能发生动态修改
     - 获取注册信息
 
         - 获取本地缓存的所有注册信息
@@ -156,7 +156,7 @@ date: 2018/09/19 19:09:00
 
 `LoadBalancerFeignClient`有以下几个需要注意的点：
 
-- 首先是`Client`组件，它用于发送request请求以及接收response响应。默认使用的网络框架是`HttpURLConnection`，也可以引入另外的依赖替换成`HttpClient`或者`OkHttp`。
+- 首先是`Client`组件，它用于发送request请求以及接收response响应。默认使用的网络框架是`HttpURLConnection`，也可以引入另外的依赖替换成`HttpClient`或者`OkHttp`。
 - `execute`方法首先选择服务实例（其中的流程与Ribbon选择服务实例的步骤基本一致），然后调用`Client`的`execute`方法执行请求并返回响应。
 
 # Zuul
