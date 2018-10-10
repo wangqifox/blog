@@ -36,7 +36,7 @@ public class NettyServer {
 主要分为以下3步：
 
 1. 初始化`EventLoopGroup`
-2. 配置`ServerBootstrap`
+2. 配置`ServerBootstrap`
 3. 创建并绑定`Channel`
 
 # 初始化EventLoopGroup
@@ -71,7 +71,7 @@ protected EventLoop newChild(Executor executor, Object... args) throws Exception
 
 `MultithreadEventExecutorGroup`中维护了一个`EventExecutorChooserFactory.EventExecutorChooser chooser`，它是一个`EventExecutor`的选择器，负责从`children`中选择一个`EventExecutor`。根据`children`数组大小的不同，从`PowerOfTwoEventExecutorChooser`、`GenericEventExecutorChooser`选择不同的实例。在`children`中轮询选择`EventExecutor`。
 
-# 配置ServerBootstrap
+# 配置ServerBootstrap
 
 `ServerBootstrap`用于引导创建`Channel`。
 
@@ -92,9 +92,9 @@ protected EventLoop newChild(Executor executor, Object... args) throws Exception
 
 ## 创建Channel
 
-创建`Channel`的工作在`AbstractBootstrap.initAndRegister`方法中完成，它有以下几个步骤。
+创建`Channel`的工作在`AbstractBootstrap.initAndRegister`方法中完成，它有以下几个步骤。
 
-1. 首先调用`channelFactory`的`newChannel()`方法创建`Channel`。前面我们设置了`Channel`的类型为`NioServerSocketChannel`，因此这里会根据`Channel`的类型通过反射的方式新建`Channel`。
+1. 首先调用`channelFactory`的`newChannel()`方法创建`Channel`。前面我们设置了`Channel`的类型为`NioServerSocketChannel`，因此这里会根据`Channel`的类型通过反射的方式新建`Channel`。
 
 2. 接着调用`ServerBootstrap.init`方法初始化新建的`Channel`：
 
