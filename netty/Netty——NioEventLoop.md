@@ -41,9 +41,27 @@ NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selec
 - `executor`：`MultithreadEventExecutorGroup`构造函数中新建的`ThreadPerTaskExecutor`
 - `selectorProvider`：`NioEventLoopGroup`构造函数中调用`SelectorProvider.provider()`返回的`SelectorProvider`
 - `strategy`：`NioEventLoopGroup`构造函数中给定的`DefaultSelectStrategyFactory`
-- `rejectedExecutionHandler`：`NioEventLoopGroup`构造函数中给定的`RejectedExecutionHandler`
+- `rejectedExecutionHandler`：`NioEventLoopGroup`构造函数中给定的`RejectedExecutionHandler`。该接口有一个唯一的接口方法`rejected`，当尝试去添加一个任务到`SingleThreadEventExecutor`中，但是由于容量的限制添加失败了，那么此时该方法就会被调用。
 
-在`openSelector()`函数中调用`provider.openSelector()`打开一个`Selector`
+`final SelectorTuple selectorTuple = openSelector();`开启`Selector`，构造`SelectorTuple`实例，`SelectorTuple`是一个封装了原始`selector`对象和封装后`selector`对象（即`SelectedSelectionKeySetSelector`对象）的类：
+
+```java
+private static final class SelectorTuple {
+    final Selector unwrappedSelector;
+    final Selector selector;
+    ...
+}
+```
+
+这里，成员变量`unwrappedSelector`就是通过`SelectorProvider.provider().openSelector()`开启的`Selector`；而成员变量`selector`则是一个`SelectedSelectionKeySetSelector`对象。
+
+`SelectedSelectionKeySetSelector`中持有`unwrappedSelector`，并作为`unwrappedSelector`的代理类，提供`Selector`所需要的方法，而`Selector`相关的操作底层实际都是由`unwrappedSelector`来完成的，只是在操作中增加了对`selectionKeys`进行相应的设置。
+
+`SelectedSelectionKeySetSelector`中除了持有`unwrappedSelector`实例外还持有一个`SelectedSelectionKeySet`对象。该对象是Netty提供的一个代替`Selector`的`selectedKeys`对象。`openSelector()`方法中通过反射机制将程序构建的`SelectedSelectionKeySet`对象给设置到了`Selector`内部的`selectedKeys`、`publicSelectedKeys`属性。这使`Selector`中所有对`selectedKeys`、`publicSelectedKeys`的操作实际上就是对`SelectedSelectionKeySet`的操作。
+
+`SelectedSelectionKeySet`类主要通过成员变量`SelectionKey[]`数组来维护被选择的`SelectionKeys`，并将扩容操作简单地简化为**newCapacity为oldCapacity的2倍**来实现。同时不再支持`remove`、`contains`、`iterator`方法。并添加了`reset`方法来对`SelectionKey[]`数组进行重置。
+
+`SelectedSelectionKeySetSelector`在每次`select`操作的时候，都会先将`selectedKeys`进行清除（`reset`）操作。
 
 # 启动
 
@@ -77,7 +95,7 @@ public void execute(Runnable task) {
 1. 将任务`task`加入任务队列`taskQueue`中
 2. 调用`inEventLoop()`方法判断当前线程是否在当前event loop中被执行
 3. 如果`inEventLoop()`方法返回`false`，表示当前event loop并没有启动，此时调用`startThread()`方法启动线程
-4. 第一次加入任务后，调用`NioEventLoop.wakeup`方法，目的是调用`Selector`的`wakeup`方法唤醒阻塞在`select()`方法中的线程
+4. 满足条件时，触发``wakeup()`方法
 
 # 执行
 
@@ -133,7 +151,7 @@ public Selector wakeup() {
 }
 ```
 
-`selectSupplier`是经过封装的selector（即`SelectedSelectionKeySetSelector`），`hasTasks`是调用`hasTask()`方法的返回值，`hasTask()`用用于判断`taskQueue`或`tailTasks`是否有任务。
+`selectSupplier`是经过封装的selector（即`SelectedSelectionKeySetSelector`），`hasTasks`是调用`hasTask()`方法的返回值，`hasTask()`用于判断`taskQueue`或`tailTasks`是否有任务。
 
 `calculateStrategy`方法的选择策略是：
 
@@ -254,7 +272,9 @@ if (hasTasks() && wakenUp.compareAndSet(false, true)) {
 
 同时，我们注意，在执行`break`退出`select`方法前，会执行`selector.selectNow()`，该方法不会阻塞，它会立即返回，同时它会抵消`Selector.wakeup()`操作带来的影响。
 
-所以，如果有非`NioEventLoop`线程提交一个任务上来，那么这个线程会执行`selector.wakeup()`方法，那么`NioEventLoop`在`if (hasTasks() && wakenUp.compareAndSet(false, true))`的后半个条件会返回`false`，程序会执行到`int selectedKeys = selector.select(timeoutMillis)`，但是此时`select`不会阻塞，而是直接返回，因为前面已经先执行了`selector.wakeup()`。因为提交任务的线程是非`NioEventLoop`线程，所以也可能是`NioEventLoop`线程成功执行了`if (hasTasks() && wakenUp.compareAndSet(false, true))`，退出了`select`方法转而去执行任务队列中的任务。注意，这时提交任务的非`NioEventLoop`线程就不会执行`selector.wakeup`。
+所以，如果有非`NioEventLoop`线程提交一个任务上来，那么这个线程会执行`selector.wakeup()`方法，那么`NioEventLoop`在`if (hasTasks() && wakenUp.compareAndSet(false, true))`的后半个条件会返回`false`，程序会执行到`int selectedKeys = selector.select(timeoutMillis)`，但是此时`select`不会阻塞，而是直接返回，因为前面已经先执行了`selector.wakeup()`。
+
+因为提交任务的线程是非`NioEventLoop`线程，所以也可能是由`NioEventLoop`线程成功执行了`if (hasTasks() && wakenUp.compareAndSet(false, true))`，退出了`select`方法转而去执行任务队列中的任务。注意，这时提交任务的非`NioEventLoop`线程就不会执行`selector.wakeup`。
 
 ```java
 if (selectedKeys != 0 || oldWakenUp || wakenUp.get() || hasTasks() || hasScheduledTasks()) {
@@ -470,7 +490,20 @@ if ((runTasks & 0x3F) == 0) {
 
 依次执行`tailTasks`队列里的所有任务。赋值全部属性`lastExecutionTime`为最后一个任务执行完后的时间。
 
+# 总结
 
+NioEventLoop是一个循环处理任务的类，任务包括：
+
+1. 监控已经注册到`Selector`的`Channel`，并在感兴趣的事件可执行时对其进行处理
+2. 任务队列`taskQueue`中的任务
+3. 定时任务和周期性任务（`scheduledTaskQueue`中的可执行任务都会先放入`taskQueue`中，再从`taskQueue`中依次取出执行）
+
+循环处理的流程如下：
+
+1. 根据任务队列中是否有任务等待执行来计算select策略
+2. 如果没有任务等待执行，则调用`select`选择就绪通道
+3. 处理就绪的IO事件
+4. 处理任务队列中的任务以及定时/周期性任务
 
 
 
