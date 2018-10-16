@@ -71,6 +71,8 @@ protected EventLoop newChild(Executor executor, Object... args) throws Exception
 }
 ```
 
+`NioEventLoop`是一个单线程的线程池，核心方法是`run()`方法，一旦线程启动，就会不间断地查询任务队列`taskQueue`，将`taskQueue`中的任务按顺序取出并执行。
+
 `MultithreadEventExecutorGroup`中维护了一个`EventExecutorChooserFactory.EventExecutorChooser chooser`，它是一个`EventExecutor`的选择器，负责从`children`中选择一个`EventExecutor`。根据`children`数组大小的不同，从`PowerOfTwoEventExecutorChooser`、`GenericEventExecutorChooser`选择不同的实例。在`children`中轮询选择`EventExecutor`。
 
 ## 配置ServerBootstrap
@@ -102,7 +104,7 @@ protected EventLoop newChild(Executor executor, Object... args) throws Exception
 
     1. 设置channel的`attr`和`options`
     2. 调用`Channel.pipeline()`方法获取`ChannelPipeline pipeline`。`pipeline`在`AbstractChannel`中维护，类型为`DefaultChannelPipeline`。`ChannelPipeline`用于维护`ChannelHandler`，`ChannelHandler`保存在`DefaultChannelHandlerContext`，以链表的形式保存在`DefaultChannelPipeline`。
-    3. 在pipeline中添加一个`ChannelInitializer`，`ChannelInitializer`在管道注册完成之后，往管道中添加一个`ServerBootstrapAcceptor`（继承`ChannelInboundHandler`），它持有对`childGroup`和`childHandler`的引用。
+    3. 在pipeline中添加一个`ChannelInitializer`，`ChannelInitializer`在管道注册完成之后，往管道中添加一个`ServerBootstrapAcceptor`（继承`ChannelInboundHandler`），它持有对`childGroup`（`bossGroup`）和`childHandler`（`NettyServerFilter`）的引用。
 
 3. 获取`group`（这里的`group`是我们前面设置的`bossGroup`），调用`MultithreadEventLoopGroup.register`方法注册`Channel`。
 
