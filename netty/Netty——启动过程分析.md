@@ -98,19 +98,35 @@ protected EventLoop newChild(Executor executor, Object... args) throws Exception
 
 创建`Channel`的工作在`AbstractBootstrap.initAndRegister`方法中完成，它有以下几个步骤。
 
-1. 首先调用`channelFactory`的`newChannel()`方法创建`Channel`。前面我们设置了`Channel`的类型为`NioServerSocketChannel`，因此这里会根据`Channel`的类型通过反射的方式新建`Channel`。
+#### 创建服务端Channel
 
-2. 接着调用`ServerBootstrap.init`方法初始化新建的`Channel`：
+首先调用`channelFactory`的`newChannel()`方法创建`Channel`。前面我们设置了`Channel`的类型为`NioServerSocketChannel`，因此这里会根据`Channel`的类型通过反射的方式新建`Channel`。`NioServerSocketChannel`的构造过程如下：
 
-    1. 设置channel的`attr`和`options`
-    2. 调用`Channel.pipeline()`方法获取`ChannelPipeline pipeline`。`pipeline`在`AbstractChannel`中维护，类型为`DefaultChannelPipeline`。`ChannelPipeline`用于维护`ChannelHandler`，`ChannelHandler`保存在`DefaultChannelHandlerContext`，以链表的形式保存在`DefaultChannelPipeline`。
-    3. 在pipeline中添加一个`ChannelInitializer`，`ChannelInitializer`在管道注册完成之后，往管道中添加一个`ServerBootstrapAcceptor`（继承`ChannelInboundHandler`），它持有对`childGroup`（`bossGroup`）和`childHandler`（`NettyServerFilter`）的引用。
+1. 调用`newSocket()`方法，通过JDK的`SelectorProvider.openServerSocketChannel()`方法来创建`ServerSocketChannel`。
+2. 新建`NioServerSocketChannelConfig`，里面保存tcp参数等数据
+3. 调用父类`AbstractNioChannel`的构造方法。传入刚刚创建`ServerSocketChannel`，将这个`ServerSocketChannel`保存在变量`ch`中，之后可以通过`javaChannel()`方法来获取这个`ServerSocketChannel`。调用`ServerSocketChannel.configureBlocking()`方法将`ServerSocketChannel`设置成非阻塞模式。
+4. 调用父类`AbstractChannel`的构造方法，创建`id`、`unsafe`、`pipeline`。
 
-3. 获取`group`（这里的`group`是我们前面设置的`bossGroup`），调用`MultithreadEventLoopGroup.register`方法注册`Channel`。
+#### 初始化服务端Channel
 
-    1. 调用`next()`方法选择一个线程（`EventLoop`）
-    2. 然后调用`SingleThreadEventLoop.register`方法
-    3. 最终调用的是`AbstractUnsafe.register`方法。在`SelectableChannel`中注册`Selector`
+接着调用`ServerBootstrap.init`方法初始化新建的`Channel`：
+
+1. 设置channel的`ChannelOptions`和`ChannelAttrs`
+2. 设置channel的`ChildOptions`和`ChildAttrs`
+3. 调用`Channel.pipeline()`方法获取`ChannelPipeline pipeline`。`pipeline`在`AbstractChannel`中维护，类型为`DefaultChannelPipeline`。`ChannelPipeline`用于维护`ChannelHandler`，`ChannelHandler`保存在`DefaultChannelHandlerContext`，以链表的形式保存在`DefaultChannelPipeline`。
+4. 在pipeline中添加一个`ChannelInitializer`，`ChannelInitializer`在管道注册完成之后，往管道中添加一个`ServerBootstrapAcceptor`（继承`ChannelInboundHandler`），它持有对`childGroup`（`bossGroup`）和`childHandler`（`NettyServerFilter`）的引用，这个处理器的功能就是为`accept`的新连接分配线程。
+
+#### 注册selector
+
+获取`group`（这里的`group`是我们前面设置的`bossGroup`），调用`MultithreadEventLoopGroup.register`方法注册`Channel`。
+
+1. 调用`next()`方法选择一个线程（`EventLoop`）
+2. 然后调用`SingleThreadEventLoop.register`方法
+3. 最终调用的是`AbstractUnsafe.register`方法。
+
+    1. 调用前面新建的`ServerSocketChannel`的`register`方法，将当前`ServerSocketChannel`注册到`Selector`上去
+    2. 调用`pipeline.invokeHandlerAddedIfNeeded()`
+    3. 调用`pipeline.fireChannelRegistered()`，传播注册成功事件
 
 ### 绑定Channel
 
@@ -126,7 +142,17 @@ protected EventLoop newChild(Executor executor, Object... args) throws Exception
 6. AbstractUnsafe.bind
 7. NioServerSocketChannel.doBind
 
-可以看到，最终调用的是`NioServerSocketChannel.doBind`方法，其中调用`ServerSocketChannel.bind`方法来完成实际的绑定。
+    最终调用的是`NioServerSocketChannel.doBind`方法，其中调用`ServerSocketChannel.bind`底层方法来完成实际的绑定。
+    
+8. pipeline.fireChannelActive()，传播`channelActive`事件
+9. DefaultChannelPipeline.HeadContext.readIfIsAutoRead()，在`SelectionKey`中注册`accept`事件
+
+## 总结
+
+1. 首先调用`newChannel()`创建服务端的`channel`，这个过程实际上是调用JDK底层的API来创建JDK的`channel`，然后netty将其包装成自己的服务端`channel`，同时会创建一些基本的组件绑定在此`channel`上，比如`pipeline`。
+2. 然后调用`init()`方法初始化服务端`channel`，这个过程最重要的是为服务端`channel`添加一个连接处理器。
+3. 随后调用`register()`方法注册`Selector`，这个过程中netty将JDK底层的`channel`注册到事件轮询器`Selector`中，并把netty的服务端`channel`作为一个`attachment`绑定到对应的JDK底层`channel`中。
+4. 最后调用`doBind()`方法，调用JDK底层的API实现对本地端口的监听。绑定成功之后，netty会重新向`Selector`注册一个`accept`事件，这样netty就可以接收新的连接了。
 
 # 客户端启动过程
 
