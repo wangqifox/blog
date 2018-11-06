@@ -15,9 +15,103 @@ date: 2018/10/11 15:31:00
 
 # 新建
 
+## MultithreadEventExecutorGroup
+
 以`NioEventLoopGroup`为例，在其父类`MultithreadEventExecutorGroup`的构造函数中调用`newChild`方法新建`NioEventLoop`。
 
-其构造函数如下：
+```java
+protected MultithreadEventExecutorGroup(int nThreads, Executor executor,
+                                        EventExecutorChooserFactory chooserFactory, Object... args) {
+    if (nThreads <= 0) {
+        throw new IllegalArgumentException(String.format("nThreads: %d (expected: > 0)", nThreads));
+    }
+
+    if (executor == null) {
+        executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
+    }
+
+    children = new EventExecutor[nThreads];
+
+    for (int i = 0; i < nThreads; i ++) {
+        boolean success = false;
+        try {
+            children[i] = newChild(executor, args);
+            success = true;
+        } catch (Exception e) {
+            // TODO: Think about if this is a good exception type
+            throw new IllegalStateException("failed to create a child event loop", e);
+        } finally {
+            if (!success) {
+                for (int j = 0; j < i; j ++) {
+                    children[j].shutdownGracefully();
+                }
+
+                for (int j = 0; j < i; j ++) {
+                    EventExecutor e = children[j];
+                    try {
+                        while (!e.isTerminated()) {
+                            e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+                        }
+                    } catch (InterruptedException interrupted) {
+                        // Let the caller handle the interruption.
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    chooser = chooserFactory.newChooser(children);
+
+    final FutureListener<Object> terminationListener = new FutureListener<Object>() {
+        @Override
+        public void operationComplete(Future<Object> future) throws Exception {
+            if (terminatedChildren.incrementAndGet() == children.length) {
+                terminationFuture.setSuccess(null);
+            }
+        }
+    };
+
+    for (EventExecutor e: children) {
+        e.terminationFuture().addListener(terminationListener);
+    }
+
+    Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
+    Collections.addAll(childrenSet, children);
+    readonlyChildren = Collections.unmodifiableSet(childrenSet);
+}
+```
+
+`NioEventLoop`在`MultithreadEventExecutorGroup`的构造函数中被创建，如果不指定`NioEventLoop`的数量，默认情况下会创建两倍的CPU核数的`NioEventLoop`。下面是`MultithreadEventExecutorGroup`构造函数的执行流程：
+
+1. 首先创建`ThreadPerTaskExecutor`，它是线程执行器，负责创建`NioEventLoop`对应的底层线程
+2. 通过for循环调用`newChild`方法创建`NioEventLoop`的对象数组
+3. 调用`chooserFactory.newChooser`创建线程选择器，线程选择器的作用是为每个新连接分配`NioEventLoop`线程
+
+### ThreadPerTaskExecutor
+
+`ThreadPerTaskExecutor`执行的作用是每次执行任务的时候都会创建一个线程实体。
+
+`NioEventLoop`线程命名规则为`nioEventLoop-{poolId}-{xx}`。`{poolId}`表示线程池id，`{xx}`表示`NioEventLoopGroup`下的第几个`NioEventLoop`。
+
+### newChild()
+
+`newChild()`方法主要有以下三个功能：
+
+- 保存线程执行器`ThreadPerTaskExecutor`
+- 创建一个`MpscQueue`
+- 创建一个`selector`
+
+### newChooser()
+
+`chooser`的作用是为了给新连接绑定对应的`NioEventLoop`。
+
+判断线程池中线程的数量，如果是2的幂则创建`PowerOfTwoEventExecutorChooser`，否则创建`GenericEventExecutorChooser`。
+
+## NioEventLoop
+
+`NioEventLoop`的构造函数如下：
 
 ```java
 NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,
@@ -93,8 +187,14 @@ public void execute(Runnable task) {
 步骤如下：
 
 1. 将任务`task`加入任务队列`taskQueue`中
-2. 调用`inEventLoop()`方法判断当前线程是否在当前event loop中被执行
-3. 如果`inEventLoop()`方法返回`false`，表示当前event loop并没有启动，此时调用`startThread()`方法启动线程
+2. 调用`inEventLoop()`方法判断当前线程是否是`NioEventLoop`的线程
+3. 如果`inEventLoop()`方法返回`false`，表示当前event loop并没有启动，此时调用`startThread()`方法创建线程。创建线程的动作由前面创建的`ThreadPerTaskExecutor`线程执行器调用其`execute()`方法完成。`execute()`方法会创建一个`FastThreadLocalThread`，然后调用`start()`方法进行启动，启动的时候会执行`Runnable`里面的`run()`方法。
+
+    `run()`方法中主要有以下两步：
+    
+    1. 调用`thread = Thread.currentThread()`保存当前的线程，这个线程其实就是线程执行器创建的`FastThreadLocalThread`
+    2. 调用`NioEventLoop.run()`方法，`run()`方法是驱动`netty`运转的核心方法。
+
 4. 满足条件时，触发``wakeup()`方法
 
 # 执行
