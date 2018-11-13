@@ -201,6 +201,12 @@ public void execute(Runnable task) {
 
 当`NioEventLoop`启动之后，就会在其`run()`方法中循环执行，`run()`方法是`NioEventLoop`的核心。
 
+`run()`方法有一个无限的`for`循环，循环里主要有三件事：
+
+1. 调用`select()`方法轮询注册到`Selector`上的io事件
+2. 调用`processSelectedKeys()`方法处理io事件
+3. 调用`runAllTasks()`方法异步处理外部线程添加到`taskQueue`中的任务
+
 ![NioEventLoop.run](media/NioEventLoop.run.png)
 
 `run()`方法的大循环主要完成下面几件事：
@@ -259,6 +265,8 @@ public Selector wakeup() {
 - 如果当前的`EventLoop`没有待处理的任务，那么返回`SelectStrategy.SELECT`（`-1`）。
 
 如果`calculateStrategy`方法返回值大于0，则说明有就绪的IO时间待处理，跳出switch代码块，进入流程2。否则如果返回的是`SelectStrategy.SELECT`，执行`select(wakenUp.getAndSet(false))`：以CAS的方式获得`wakenUp`当前的标识，并将`wakenUp`设置为`false`。将`wakenUp`作为参数传入`select(boolean oldWakenUp)`方法中。
+
+## select()
 
 `select`方法除了检查就绪通道以外，还有一个很重要的事，就是解决`epoll bug`问题。`epoll bug`会导致`Selector`空轮询，IO线程CPU使用率100%，严重影响系统的安全性和可靠性。
 
@@ -592,47 +600,21 @@ if ((runTasks & 0x3F) == 0) {
 
 # 总结
 
-NioEventLoop是一个循环处理任务的类，任务包括：
+- `NioEventLoop`创建
 
-1. 监控已经注册到`Selector`的`Channel`，并在感兴趣的事件可执行时对其进行处理
-2. 任务队列`taskQueue`中的任务
-3. 定时任务和周期性任务（`scheduledTaskQueue`中的可执行任务都会先放入`taskQueue`中，再从`taskQueue`中依次取出执行）
+    用户代码创建`NioEventLoopGroup`的时候`NioEventLoop`被创建，默认不传参数的时候会创建两倍的CPU核数的`NioEventLoop`。每个`NioEventLoopGroup`都会有一个`chooser`进行现场的分配，`chooser`也会根据`NioEventLoop`的个数做一定程度的优化。`NioEventLoop`的创建的时候会创建一个`Selector`和一个定时任务队列。在创建`Selector`的时候netty会通过反射的方式用数组实现来替换掉`Selector`里面的两个`hashset`数据结构。
+    
+- `NioEventLoop`启动
 
-循环处理的流程如下：
+    `NioEventLoop`在首次调用`execute`方法的时候启动线程，这个线程是一个`FastThreadLocalThread`。启动线程之后，netty会将启动完成的线程保存到成员变量`thread`中，这样就能在执行逻辑过程中判断当前线程是否在`NioEventLoop`中。
+    
+- `NioEventLoop`执行逻辑
 
-1. 根据任务队列中是否有任务等待执行来计算select策略
-2. 如果没有任务等待执行，则调用`select`选择就绪通道
-3. 处理就绪的IO事件
-4. 处理任务队列中的任务以及定时/周期性任务
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    `NioEventLoop`执行逻辑在`run`方法里。主要包括三个过程：
+    
+    1. 检测IO事件。
+    2. 处理IO事件。
+    3. 执行任务队列。
 
 
 
