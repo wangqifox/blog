@@ -38,7 +38,7 @@ String s = bufferedReader.lines().collect(Collectors.joining());
 
 ```java
 Scanner scanner = new Scanner(inputStream).useDelimiter("\\A");
-String s = scanner.hasNext() ? s.next() : "";
+String s = scanner.hasNext() ? scanner.next() : "";
 ```
 
 ### IOUtils (Apache Utils)
