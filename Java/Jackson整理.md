@@ -1082,7 +1082,9 @@ public class PersonRawValue {
 序列化输出如下：
 
 ```java
-{"personId":0,"address":{ "street" : "Wall Street", "no":1}}
+{
+"personId":0,"address":{ "street" : "Wall Street", "no":1}
+}
 ```
 
 我们主要到，address中的JSON字符串现在是JSON结构中的一部分。
