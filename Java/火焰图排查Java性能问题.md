@@ -70,7 +70,11 @@ cd FlameGraph
 
 ## 分析火焰图
 
-得到的图片如下：
+得到的图片示例如下，像一团火焰，因此得名火焰图：
+
+![traces_direct](media/traces_direct.png)
+
+图片文件如下：
 
 [traces_direct](media/traces_direct.svg)
 
