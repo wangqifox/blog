@@ -273,6 +273,8 @@ public class EventDemoListener2 implements ApplicationListener<EventDemo> {
 
 执行结果显示：`EventDemoListener2`和`EventDemoListener`的执行间隔1秒，`EventDemoListener2`的执行和程序的结束也间隔1秒。结果表示我们的响应程序是同步执行的，一个响应程序的执行会阻塞下一个响应程序的执行。
 
+### 自定义SimpleApplicationEventMulticaster
+
 通过前面的代码分析，我们发现如果`SimpleApplicationEventMulticaster`中的`taskExecutor`如果不为null，将在`taskExecutor`中异步执行响应程序。`applicationEventMulticaster`的新建在`initApplicationEventMulticaster`方法中，默认情况下它会新建一个`SimpleApplicationEventMulticaster`，其中的`taskExecutor`为null。因此想要`taskExecutor`不为null，我们可以自己手动创建一个`SimpleApplicationEventMulticaster`然后设置一个`taskExecutor`。
 
 修改`Config`类：
