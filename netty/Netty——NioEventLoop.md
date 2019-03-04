@@ -97,11 +97,17 @@ protected MultithreadEventExecutorGroup(int nThreads, Executor executor,
 
 ### newChild()
 
-`newChild()`方法主要有以下三个功能：
+`newChild()`方法如下：
 
-- 保存线程执行器`ThreadPerTaskExecutor`
-- 创建一个`MpscQueue`
-- 创建一个`selector`
+```java
+@Override
+protected EventLoop newChild(Executor executor, Object... args) throws Exception {
+    return new NioEventLoop(this, executor, (SelectorProvider) args[0],
+        ((SelectStrategyFactory) args[1]).newSelectStrategy(), (RejectedExecutionHandler) args[2]);
+}
+```
+
+调用`NioEventLoop`的构造函数新建`NioEventLoop`。
 
 ### newChooser()
 
@@ -195,7 +201,7 @@ public void execute(Runnable task) {
     1. 调用`thread = Thread.currentThread()`保存当前的线程，这个线程其实就是线程执行器创建的`FastThreadLocalThread`
     2. 调用`NioEventLoop.run()`方法，`run()`方法是驱动`netty`运转的核心方法。
 
-4. 满足条件时，触发``wakeup()`方法
+4. 满足条件时，触发`wakeup()`方法
 
 # 执行
 
@@ -264,7 +270,7 @@ public Selector wakeup() {
 - 如果当前的`EventLoop`中有待处理的任务，那么会调用`selectSupplier.get()`方法，最终会调用`Selector.selectNow()`方法，返回就绪通道的数量，并清空`selectionKeys`。
 - 如果当前的`EventLoop`没有待处理的任务，那么返回`SelectStrategy.SELECT`（`-1`）。
 
-如果`calculateStrategy`方法返回值大于0，则说明有就绪的IO时间待处理，跳出switch代码块，进入流程2。否则如果返回的是`SelectStrategy.SELECT`，执行`select(wakenUp.getAndSet(false))`：以CAS的方式获得`wakenUp`当前的标识，并将`wakenUp`设置为`false`。将`wakenUp`作为参数传入`select(boolean oldWakenUp)`方法中。
+如果`calculateStrategy`方法返回值大于0，则说明有就绪的IO事件待处理，跳出switch代码块，进入流程2。否则如果返回的是`SelectStrategy.SELECT`，执行`select(wakenUp.getAndSet(false))`：以CAS的方式获得`wakenUp`当前的标识，并将`wakenUp`设置为`false`。将`wakenUp`作为参数传入`select(boolean oldWakenUp)`方法中。
 
 ## select()
 
