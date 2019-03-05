@@ -5,7 +5,7 @@ date: 2019/03/05 08:51:00
 
 [canal](https://github.com/alibaba/canal)是阿里巴巴开发的，用于解析数据库日志的工具，提供增量数据订阅和消费。目前主要支持mysql。
 
-canal的原理并不复杂：模拟mysql slave协议，将自己伪装为slave，收到log之后进行解析然后发送给应用程序。参考：[canal产品介绍](media/canal产品介绍.pptx)
+canal的原理并不复杂：模拟mysql slave协议，将自己伪装为slave，收到log之后进行解析然后发送给应用程序。参考：[canal产品介绍](download/canal/media/canal产品介绍.pptx)
 
 canal在我们公司的主要用途是同步mysql数据到ElasticSearch。目前需要基于canal做二次开发，因此需要熟悉canal的源码。本文是对canal源码的初读。
 
