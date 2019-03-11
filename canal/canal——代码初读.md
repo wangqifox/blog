@@ -159,8 +159,9 @@ canal的简易时序图如下所示（第一次画时序图，欢迎指正）：
     2. 获取binlog的checksum信息
     3. 向mysql注册slave信息
     4. 向mysql发送dump binlog的请求
-    5. 读取binlog，存储在`LogBuffer`中
-    6. 调用`MultiStageCoprocessor.publish`投递数据
+    5. 接下去循环读取binlog，存储在`LogBuffer`中
+    
+        调用`MultiStageCoprocessor.publish`投递数据
 
         `MultiStageCoprocessor`的实际类为`MysqlMultiStageCoprocessor`。
 
