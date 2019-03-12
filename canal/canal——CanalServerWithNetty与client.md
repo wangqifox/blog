@@ -75,7 +75,7 @@ embeddedServer的相关方法在[canal——binlog消费位点的控制][2]中�
 
 接下来我们来介绍与`CanalServerWithNetty`交互的客户端。
 
-首先介绍一个client的运行步骤：
+首先介绍client的运行步骤：
 
 - 新建`CanalConnector`
 - 调用`CanalConnector.connect`方法连接服务端
@@ -174,7 +174,7 @@ public void setZkClientx(ZkClientx zkClientx) {
 }
 ```
 
-`setZkClientx`方法处理保存zookeeper的地址，还调用`initClientRunningMonitor`方法初始化运行时监视器`ClientRunningMonitor`。
+`setZkClientx`方法处理保存zookeeper的地址，还调用`initClientRunningMonitor`方法初始化client运行时监视器`ClientRunningMonitor`。
 
 #### ClientRunningMonitor
 
@@ -223,7 +223,7 @@ private synchronized void initClientRunningMonitor(ClientIdentity clientIdentity
 
 `ClientRunningMonitor`的启动过程分为两步：
 
-首先在zookeeper的`/otter/canal/destinations/{destination}/{clientId}/running`节点上设置监听：
+第一步：在zookeeper的`/otter/canal/destinations/{destination}/{clientId}/running`节点上设置监听：
 
 ```java
 dataListener = new IZkDataListener() {
@@ -275,6 +275,8 @@ dataListener = new IZkDataListener() {
 
 1. 读取节点的数据
 2. 如果数据显示本机的client状态变成了非active，说明出现了主动释放的操作。调用`releaseRunning`方法释放本机的连接。`releaseRunning`方法会调用`processActiveExit()`断开当前client的连接
+
+第二步：调用`initRunning`方法开始运行本机的client。
 
 # 总结
 
