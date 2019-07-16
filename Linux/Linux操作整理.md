@@ -289,3 +289,25 @@ source_file是待建立链接文件的文件，target_file是新创建的链接�
 > https://www.cnblogs.com/xiaochaohuashengmi/archive/2011/10/05/2199534.html
 > http://blog.51cto.com/kusorz/1876315
 
+# 查看端口占用情况
+
+> http://lazybios.com/2015/03/netstat-notes/
+
+## netstat
+
+`netstat`用来查看系统当前网络状态信息，包括端口、连接情况等，常用方式如下：
+
+`netstat -atunlp`，各参数含义如下：
+
+- `-t`：显示tcp端口
+- `-u`：显示udp端口
+- `-l`：仅显示监听套接字（LISTEN状态的套接字）
+- `-p`：显示进程标识符和程序名称，每个套接字/端口都属于一个程序
+- `-n`：不进行DNS解析
+- `-a`：显示所有连接的端口
+
+## lsof
+
+`lsof`的作用是列出当前系统打开文件(list open files)，不过通过`-i`参数也能查看端口的连接情况，`-i`后跟冒号端口可以查看指定端口信息，直接`-i`是系统当前所有打开的端口
+
+`lsof -i:22 #查看22端口连接情况`
