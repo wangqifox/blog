@@ -11,7 +11,7 @@ date: 2019/11/29 11:10:00
 
 这里的原因是`ElasticSearch`底层依赖lucene来提供搜索能力，一个`lucene index`由许多独立的`Segments`组成。
 
-![lucene_index](media/lucene_index.jpeg)
+![lucene_index](media/lucene_index.png)
 
 `Segment`是最小的数据存储单元。其中包含了文档中的词汇字典、词汇字典的倒排索引以及Document的字段数据。因此`Segment`直接提供了搜索功能。但是`Segment`能提供搜索的前提是数据必须被提交，即文档经过一系列的处理之后生成倒排索引等一系列数据。可以想见这个过程是比较耗时的。因此`Elasticsearch`并不会每接收到一条数据就提交到一个`Segment`中，一方面是因为这样耗时太长，另一方面是这样会生成巨量的`Segment`，降低了IO性能。
 
