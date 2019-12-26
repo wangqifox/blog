@@ -374,7 +374,7 @@ NodeChannels.sendRequest
 
 ## 节点请求的处理
 
-节点响应最初到达`Netty4MessageChannelHandler`的`channelRead`方法，这是由`netty`调用的。响应数据经过如下的调用：
+节点请求最初到达`Netty4MessageChannelHandler`的`channelRead`方法，这是由`netty`调用的。请求数据经过如下的调用：
 
 ```java
 Netty4MessageChannelHandler.channelRead
