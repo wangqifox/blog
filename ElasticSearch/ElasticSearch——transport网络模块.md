@@ -34,8 +34,8 @@ http请求处理方法经过了如下调用:
 ```java
 Netty4HttpRequestHandler.channelRead0
     AbstractHttpServerTransport.incomingRequest
-        handleIncomingRequest
-            dispatchRequest
+        AbstractHttpServerTransport.handleIncomingRequest
+            AbstractHttpServerTransport.dispatchRequest
                 Dispatcher.dispatchRequest
 ```
 
@@ -150,7 +150,7 @@ public <    Request extends ActionRequest,
 
 对于不同的请求，响应的返回过程会有一些相同和不同点。下面来分析一下响应是如何被返回的。
 
-首先`onResponse`方法的实现在`RestActionListener`中，它调用了抽闲方法`processResponse`，`processResponse`的实现在`RestResponseListener`中：
+首先`onResponse`方法的实现在`RestActionListener`中，它调用了抽象方法`processResponse`，`processResponse`的实现在`RestResponseListener`中：
 
 ```java
 protected final void processResponse(Response response) throws Exception {
