@@ -23,7 +23,7 @@ date: 2019/12/30 18:40:00
 
 # 性能测试
 
-从直觉上看，`stream`因为直接读写二进制流，性能上会比较好。为了验证我们的直觉，我们设计测试用例来对比`stream`操作与`json`操作的性能。代码如[PerformanceTest.java](https://github.com/wangqifox/elasticsearch-stream/blob/master/src/test/java/love/wangqi/PerformanceTest.java)。
+从直觉上看，`stream`因为直接读写二进制流，性能上会比较好。为了验证我们的直觉，我们设计测试用例来对比`stream`操作与`json`操作的性能。代码见：[PerformanceTest.java](https://github.com/wangqifox/elasticsearch-stream/blob/master/src/test/java/love/wangqi/PerformanceTest.java)。
 
 该测试是一个不太严格的测试，仅仅通过它对`stream`的性能有个直观的认识。
 
