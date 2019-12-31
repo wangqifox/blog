@@ -30,8 +30,8 @@ date: 2019/12/27 11:07:00
 请求数据的解析流程如下：
 
 1. 根据数据的类型创建解析器`XContentParser`
-2. 将字节形式的数据转化成`StreamInput`流形式
-3. 使用解析器`XContentParser`来解析数据
+2. 将字节形式的数据转化成`StreamInput`流数据形式
+3. 使用解析器`XContentParser`将流数据解析成具体表示数据的类
 
 ## 响应数据的写操作
 
@@ -39,7 +39,7 @@ date: 2019/12/27 11:07:00
 
 这里有一个相关的类`XContentBuilder`，该类是`XContent`数据的构造器。向`XContentBuilder`中添加数据，`XContentBuilder`可以根据指定的类型（4种）生成相应二进制格式的数据。
 
-`buildResponse`返回一个`RestResponse`实例。`RestResponse`是定义响应数据的抽象类，实现类是`BytesRestResponse`。其中包含响应头、响应状态、数据内容、数据类型。其中数据内容以`BytesReference`实例的形式存在。`BytesRestResponse`构造的时候会调用`BytesReference.bytes(XContentBuilder xContentBuilder)`方法将`XContentBuilder`转化成字节数据形式的二进制格式。
+`buildResponse`返回一个`RestResponse`实例。`RestResponse`是定义响应数据的抽象类，实现类是`BytesRestResponse`。其中包含响应头、响应状态、数据内容、数据类型。其中数据内容以`BytesReference`实例的形式存在。`BytesRestResponse`构造的时候会调用`BytesReference.bytes(XContentBuilder xContentBuilder)`方法将`XContentBuilder`转化成字节形式的二进制格式。
 
 最后根据`BytesRestResponse`数据生成`Netty4HttpResponse`实例，通过`netty`提供的方法发送。
 
@@ -129,7 +129,7 @@ BytesReference serialize(BytesStreamOutput bytesStream) throws IOException {
 }
 ```
 
-可以看到，最终发送的数据分为两个部分：头部、内容。
+可以看到，最终发送的数据分为两个部分：头部、内容。我们知道，`netty`对于拆包粘包的问题设计了`FrameDecoder`，这里的头部的用途之一就是数据包的解码。
 
 首先将头部数据的位置先空出来，然后调用`writeTo`写入`action`名称（比如`cluster:monitor/nodes/usage[n]`）。接着调用`writeMessage`方法，`writeMessage`方法内部调用`Writeable.writeTo`方法写入具体的二进制数据。前面我们说过对节点的请求数据类都要实现`TransportRequest`，因此这里实际调用的就是各个实现类定义的`writeTo`方法。
 
