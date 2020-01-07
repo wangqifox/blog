@@ -148,7 +148,7 @@ seaweedfs是根据facebook的论文[Haystack](https://www.usenix.org/legacy/even
 
 volume id是一个32位无符号整型。file key是一个64为无符号整型。file cookie是一个32位无符号整型，用来防止文件url被猜到。
 
-如果要保存成字符串的话，需要`8+1+16+8`一共`33`个字节。
+每个数字都以16进制保存，因此如果要保存成字符串的话，需要`8+1+16+8`一共`33`个字节。
 
 ## 文件访问
 
