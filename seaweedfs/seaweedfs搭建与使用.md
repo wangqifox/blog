@@ -15,7 +15,7 @@ seaweedfs是根据facebook的论文[Haystack](https://www.usenix.org/legacy/even
 
 # 安装
 
-从`github`中获取seaweedfs对应操作系统的可执行文件`weed`。
+从[github](https://github.com/chrislusf/seaweedfs/releases)中获取seaweedfs对应操作系统的可执行文件`weed`。
 
 执行`./weed -h`查看seaweedfs的各种指令。指令说明：
 
@@ -79,15 +79,15 @@ seaweedfs是根据facebook的论文[Haystack](https://www.usenix.org/legacy/even
 | -compactionMBps | 限制后台压缩以及拷贝的速度 |
 | -cpuprofile | 输出cpu使用的统计信息 |
 | -dataCenter | volume服务的数据中心名称 |
-| -dir | 存储数据文件的目录，默认`/tmp` |
-| -idleTimeout | 闲置的连接时间，默认`30秒` |
+| -dir | 存储数据文件的目录（可以指定多个目录，以逗号分隔），默认`/tmp` |
+| -idleTimeout | 闲置连接的超时时间，默认`30秒` |
 | -images.fix.orientation | 上传时调整图片文件的方向 |
-| -index | 选择索引存储类型。可选`memory leveldb leveldbMedium leveldbLarge`，默认为`memory`。选择`memory`索引的存取比较快，但是volume的启动比较慢，因为启动时需要将文件的索引加载到内存中。如果选择`leveldb`索引的存取会稍微变慢一点，但是volume的启动会快很多 |
+| -index | 选择索引存储类型。可选`memory leveldb leveldbMedium leveldbLarge`，默认为`memory`。选择`memory`则索引的存取比较快，但是volume的启动会比较慢，因为启动时需要将文件的索引加载到内存中。如果选择`leveldb`索引的存取会稍微变慢一点，但是volume的启动会快很多 |
 | -ip | volume服务的ip地址 |
 | -ip.bind | volume服务绑定的ip地址 |
-| -max | volume的最大数量，默认为7 |
+| -max | volume的最大数量，默认为`7` |
 | -memprofile | 输出内存使用的统计信息 |
-| -mserver | master服务，以逗号分隔 |
+| -mserver | master服务，以逗号分隔，默认为`localhost:9333` |
 | -port | http服务的监听端口，默认`8080` |
 | -port.public | 公共服务的端口 |
 | -publicUrl | 公共服务的地址 |
