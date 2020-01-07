@@ -7,7 +7,7 @@ seaweedfs（github: [https://github.com/chrislusf/seaweedfs](https://github.com/
 
 <!-- more -->
 
-seaweedfs有两大特性：存储数以十亿记的文件，访问文件迅速。
+seaweedfs是根据facebook的论文[Haystack](https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Beaver.pdf)来实现的，它有两大特性：存储数以十亿记的文件，访问文件非常快。
 
 之所以它能达到这两个特性，是因为所有文件的元数据(`metadata`)不存储在`master`节点，而是分散存储在`volume`（逻辑卷，存储数据的逻辑结构）中，`master`节点只保存`volume`信息。这样一来，`master`节点的查询压力就被分散到`volume`节点了。
 
