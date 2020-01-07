@@ -82,7 +82,7 @@ seaweedfs有两大特性：存储数以十亿记的文件，访问文件迅速�
 | -dir | 存储数据文件的目录，默认`/tmp` |
 | -idleTimeout | 闲置的连接时间，默认`30秒` |
 | -images.fix.orientation | 上传时调整图片文件的方向 |
-| -index | 选择索引存储类型。可选`memory|leveldb|leveldbMedium|leveldbLarge`，默认为`memory`。选择`memory`索引的存取比较快，但是volume的启动比较慢，因为启动时需要将文件的索引加载到内存中。如果选择`leveldb`索引的存取会稍微变慢一点，但是volume的启动会快很多 |
+| -index | 选择索引存储类型。可选`memory leveldb leveldbMedium leveldbLarge`，默认为`memory`。选择`memory`索引的存取比较快，但是volume的启动比较慢，因为启动时需要将文件的索引加载到内存中。如果选择`leveldb`索引的存取会稍微变慢一点，但是volume的启动会快很多 |
 | -ip | volume服务的ip地址 |
 | -ip.bind | volume服务绑定的ip地址 |
 | -max | volume的最大数量，默认为7 |
