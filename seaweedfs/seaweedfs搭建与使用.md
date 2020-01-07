@@ -204,6 +204,11 @@ visit "http://10.0.20.46:8888/path/to/sources/?lastFileName=abc.txt&limit=50"
 
 # 删除文件
 curl -X DELETE "http://10.0.20.46:8888/text/new.txt"
+
+# 递归删除路径下所有的文件以及目录
+curl -X DELETE http://10.0.20.46:8888/path/to/dir?recursive=true
+# 递归删除所有的文件以及目录，忽略递归错误
+curl -X DELETE http://10.0.20.46:8888/path/to/dir?recursive=true&ignoreRecursiveError=true
 ```
 
 ## filer原理
