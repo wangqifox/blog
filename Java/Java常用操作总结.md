@@ -90,12 +90,37 @@ double[] array;
 DoubleStream.of(array).boxed().collect(Collectors.toList());
 ```
 
+## InputStream转byte[]
 
+1. 不使用第三方库
 
+```java
+ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+byte[] buffer = new byte[1024];
+int nRead;
+while ((nRead = inputStream.read(buffer)) != -1) {
+    byteArrayOutputStream.write(buffer, 0, nRead);
+}
+byte[] bytes1 = byteArrayOutputStream.toByteArray();
+```
 
+2. 使用`Commons IO`
 
+```java
+byte[] bytes2 = IOUtils.toByteArray(inputStream);
+```
 
+3. 使用`Spring`
 
+```java
+byte[] bytes3 = StreamUtils.copyToByteArray(inputStream);
+```
+
+4. 使用`guava`
+
+```java
+byte[] bytes4 = ByteStreams.toByteArray(inputStream);
+```
 
 
 
