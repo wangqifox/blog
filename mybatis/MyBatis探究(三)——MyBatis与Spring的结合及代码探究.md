@@ -161,7 +161,7 @@ beanDefinition的生成在`processConfigBeanDefinitions`方法中完成，重点
         }
         ```
     
-        这段代码将Config类中被`@Bean`注释的方法封装成`BeanMethod`类，保存在configClass中。
+    这段代码将Config类中被`@Bean`注释的方法封装成`BeanMethod`类，保存在configClass中。
 
 2. 调用`loadBeanDefinitions`方法加载configClass中注册的BeanDefinition，调用流程如下：
 
@@ -176,7 +176,7 @@ beanDefinition的生成在`processConfigBeanDefinitions`方法中完成，重点
         }
         ```
         
-        遍历Config类中所有的BeanMethod，调用`loadBeanDefinitionForBeanMethod`将其加载为BeanDefinition，真实的类为`ConfigurationClassBeanDefinitionReader$ConfigurationClassBeanDefinition`。
+    这段代码遍历Config类中所有的BeanMethod，调用`loadBeanDefinitionForBeanMethod`将其加载为BeanDefinition，真实的类为`ConfigurationClassBeanDefinitionReader$ConfigurationClassBeanDefinition`。
     
 #### MapperScannerConfigurer
     
