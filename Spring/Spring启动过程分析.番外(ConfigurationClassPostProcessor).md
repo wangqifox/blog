@@ -387,7 +387,7 @@ private void processMemberClasses(ConfigurationClass configClass, SourceClass so
 
 - AnnotationConfigUtils.attributesForRepeatable
 
-**获取注释的属性**
+    **获取注释的属性**
 
 ```java
 static Set<AnnotationAttributes> attributesForRepeatable(AnnotationMetadata metadata,
@@ -406,7 +406,7 @@ static Set<AnnotationAttributes> attributesForRepeatable(AnnotationMetadata meta
 }
 ```
     
-    - StandardAnnotationMetadata.getAnnotationAttibutes
+- StandardAnnotationMetadata.getAnnotationAttibutes
 
 ```java
 public Map<String, Object> getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
@@ -415,9 +415,9 @@ public Map<String, Object> getAnnotationAttributes(String annotationName, boolea
 }
 ```
     
-    - AnnotatedElementUtils.getMergedAnnotationAttributes
-        
-        **获取注释属性**  
+- AnnotatedElementUtils.getMergedAnnotationAttributes
+ 
+    **获取注释属性**  
         
 ```java
 public static AnnotationAttributes getMergedAnnotationAttributes(AnnotatedElement element,
