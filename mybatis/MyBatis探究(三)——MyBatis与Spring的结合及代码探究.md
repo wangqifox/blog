@@ -152,7 +152,7 @@ beanDefinition的生成在`processConfigBeanDefinitions`方法中完成，重点
     2. ConfigurationClassParser.processConfigurationClass
     3. ConfigurationClassParser.doProcessConfigurationClass
     
-        在`doProcessConfigurationClass`方法中处理Config类中被`@Bean`注释的方法：
+        在`doProcessConfigurationClass`方法中处理Config类中被`@Bean`注释的方法，将Config类中被`@Bean`注释的方法封装成`BeanMethod`类，保存在configClass中。
     
         ```java
         Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
@@ -160,24 +160,20 @@ beanDefinition的生成在`processConfigBeanDefinitions`方法中完成，重点
             configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
         }
         ```
-    
-    这段代码将Config类中被`@Bean`注释的方法封装成`BeanMethod`类，保存在configClass中。
 
 2. 调用`loadBeanDefinitions`方法加载configClass中注册的BeanDefinition，调用流程如下：
 
     1. ConfigurationClassBeanDefinitionReader.loadBeanDefinitions
     2. ConfigurationClassBeanDefinitionReader.loadBeanDefinitionsForConfigurationClass
     
-        在`loadBeanDefinitionsForConfigurationClass`方法中加载Config类中被`@Bean`注释的方法：
+        在`loadBeanDefinitionsForConfigurationClass`方法中加载Config类中被`@Bean`注释的方法，遍历Config类中所有的BeanMethod，调用`loadBeanDefinitionForBeanMethod`将其加载为BeanDefinition，真实的类为`ConfigurationClassBeanDefinitionReader$ConfigurationClassBeanDefinition`：
         
         ```java
         for (BeanMethod beanMethod : configClass.getBeanMethods()) {
             loadBeanDefinitionsForBeanMethod(beanMethod);
         }
         ```
-        
-    这段代码遍历Config类中所有的BeanMethod，调用`loadBeanDefinitionForBeanMethod`将其加载为BeanDefinition，真实的类为`ConfigurationClassBeanDefinitionReader$ConfigurationClassBeanDefinition`。
-    
+
 #### MapperScannerConfigurer
     
 `MapperScannerConfigurer`和`MapperFactoryBean`一样，也定义在Config类中，使用`@Bean`注释。因此`MapperScannerConfigurer`本身BeanDefintion的生成流程和`MapperFactoryBean`是一样的。
