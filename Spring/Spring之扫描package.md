@@ -12,7 +12,7 @@ date: 2020/01/15 10:21:00
 使用Spring来扫描某个指定的package是非常便捷的，示例如下：
 
 ```java
-ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);'
+ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
 Set<BeanDefinition> candidateComponents = scanner.findCandidateComponents("io.github.wangqifox");
 for (BeanDefinition candidateComponent : candidateComponents) {
     System.out.println(candidateComponent.getBeanClassName());
