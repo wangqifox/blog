@@ -319,15 +319,13 @@ Advisor列表不为空，则调用`AbstractAutoProxyCreator.createProxy`来创�
 2. 获取事务管理器`PlatformTransactionManager`，这是我们的在Config中定义的`DataSourceTransactionManager`
 3. 调用`TransactionAspectSupport.createTransactionIfNecessary`，返回`TransactionInfo`
 
-    在该方法中调用`DataSourceTransactionManager.getTransaction`方法获取事务状态`TransactionStatus`。包括：获取连接、建立事务。建立的连接保存在`DataSourceTransactionObject`中，`DataSourceTransactionObject`保存在`DefaultTransactionStatus`中，`DefaultTransactionStatus`保存在`TransactionInfo`中。这个过程都在`DataSourceTransactionManager.doBegin`方法中执行。`doBegin`方法还有一个步骤，代码如下：
+    在该方法中调用`DataSourceTransactionManager.getTransaction`方法获取事务状态`TransactionStatus`。包括：获取连接、建立事务。建立的连接保存在`DataSourceTransactionObject`中，`DataSourceTransactionObject`保存在`DefaultTransactionStatus`中，`DefaultTransactionStatus`保存在`TransactionInfo`中。这个过程都在`DataSourceTransactionManager.doBegin`方法中执行。`doBegin`方法还有一个步骤，将建立的连接保存在`TransactionSynchronizationManager`的静态变量resources中，resources是一个`ThreadLocal`类型的变量。代码如下：
     
     ```java
     if (txObject.isNewConnectionHolder()) {
         TransactionSynchronizationManager.bindResource(getDataSource(), txObject.getConnectionHolder());
     }
     ```
-    
-    这几句代码将建立的连接保存在`TransactionSynchronizationManager`的静态变量resources中，resources是一个`ThreadLocal`类型的变量。
 
 4. 调用`ReflectiveMethodInvocation.proceed`方法。在其中调用`UserService.insertUser`的真实方法，其中调用`UserMapper.insertUser`方法。
 
