@@ -43,7 +43,7 @@ logback也是一种日志实现。logback是由log4j创始人设计的又一个�
 
 ## slf4j提供的适配库和桥接库
 
-适配器（旧日志输出到slf4j）：
+适配器（slf4j输出到实现）：
 
 - slf4j-log4j12: 使用log4j-1.2作为日志输出服务
 - slf4j-jdk14: 使用java.util.logging作为日志输出服务
@@ -54,7 +54,7 @@ logback也是一种日志实现。logback是由log4j创始人设计的又一个�
 
 logback天然与slf4j适配，不需要额外引入适配库
 
-桥接库（slf4j输出到实现）：
+桥接库（旧日志输出到slf4j）：
 
 - log4j-over-slf4j: 将使用log4j api输出的日志桥接至slf4j
 - jcl-over-slf4j: 将使用jcl api输出的日志桥接至slf4j
