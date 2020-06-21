@@ -277,3 +277,6 @@ public int size() {
 > https://lotabout.me/2018/skip-list/
 > https://zhuanlan.zhihu.com/p/53975333
 > https://segmentfault.com/a/1190000020601226
+> https://juejin.im/post/5cdc38236fb9a0322d04ac7b
+> https://juejin.im/post/57fa935b0e3dd90057c50fbc
+> https://zhuanlan.zhihu.com/p/33674267
