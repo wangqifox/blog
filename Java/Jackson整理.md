@@ -1083,7 +1083,8 @@ public class PersonRawValue {
 
 ```java
 {
-"personId":0,"address":{ "street" : "Wall Street", "no":1}
+"personId":0,
+"address":{ "street" : "Wall Street", "no":1}
 }
 ```
 
