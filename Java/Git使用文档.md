@@ -280,8 +280,6 @@ c10b61bb85ea5e3002525b1845e99f58a868c98b modify 1.txt
 
 `git reset --hard d4af13be6`
 
-`commit id`可以不用写全，只要Git可以区分不同的版本即可。
-
 查看状态，可以看到已经回退到上一个版本了：
 
 ```
@@ -298,7 +296,7 @@ c10b61bb85ea5e3002525b1845e99f58a868c98b modify 1.txt
 
 如果不记得`commit id`了，我们还可以执行`git reflog`命令来找到那一次的`commit id`。`git reflog`命令记录了你的每次命令。
 
-回退之后使用一下命令推送到远程仓库：
+回退之后使用以下命令推送到远程仓库：
 
 ```
 git push origin HEAD --force
