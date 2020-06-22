@@ -145,7 +145,7 @@ Observable.timer(3, TimeUnit.SECONDS)
 
 ### interval
 
-定时器功能。周期性执行任务。
+返回一个Observable，它按固定的时间间隔发射一个无限递增的整数序列。
 
 ```java
 Observable.interval(1, TimeUnit.SECONDS).subscribe(
@@ -611,6 +611,9 @@ Observable.interval(1, TimeUnit.SECONDS)
 
 ![rxjava-23](media/rxjava-23.png)
 
+### startWith
+
+在数据序列的开头插入一条指定的项
 
 ### concat
 
@@ -710,7 +713,7 @@ Observable.concatEager(Observable.fromArray(observable1, observable2))
 
 
 
-
+> https://github.com/mcxiaoke/RxDocs
 > http://gank.io/post/560e15be2dca930e00da1083
 > https://juejin.im/post/5a43a842f265da432d2863ab#heading-26
 > https://www.daidingkang.cc/2017/05/19/Rxjava/
