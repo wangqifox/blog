@@ -267,6 +267,73 @@ git push origin HEAD --force
 - `git reset –-soft`：回退到某个版本，只回退了commit的信息，不会恢复到index file一级。如果还要提交，直接commit即可
 - `git reset -–hard`：彻底回退到某个版本，本地的源码也会变为上一个版本的内容，撤销的commit中所包含的更改被冲掉
 
+### 忽略文件
+
+通常我们在开发过程中都会有一些文件或者目录是不想纳入版本控制系统的，比如Java开发中生成的`.class`、`.jar`文件和`target`目录。
+
+> 哪些文件需要被忽略呢？一个最简单的分辨方法就是，那些在你开发项目过程中自己生成的文件。例如，临时文件，日志和缓存文件等。
+> 还有其他的例子，比如那些为编译代码所提供的密码或者个人设置文件。
+> 这个链接：[https://github.com/github/gitignore](https://github.com/github/gitignore)可以帮助你更好地了解在不同的项目和开发平台上哪些内容不需要纳入版本控制中去。
+
+如果我们要手动管理这些被忽略的文件，就必须非常小心翼翼，确保每次操作这些文件都不被保存到暂存区进而提交到版本库。好在Git提供了自动管理这些被忽略文件的机制，我们只需要在工作目录中创建一个称为`.gitignore`的文件，并在此文件中加入被忽略的文件和目录：
+
+- 忽略一个特定的文件：给出从项目根目录开始的路径和文件名，例如`path/to/file.ext`
+- 忽略项目下所有这个名字的文件：只要给出文件的全名，不要包括任何路径，例如`filename.ext`
+- 忽略项目下所有这个类型的文件：例如`*.ext`
+- 忽略一个特定目录下的所有文件：例如`path/to/folder/*`
+
+在一个项目开始之前，最好首先定义好`.gitignore`文件。因为一旦某个文件被提交了，即使把它写入到`.gitignore`文件中，这个文件也不会被忽略。
+
+如果我们创建一个文件叫`canIgnore.txt`并将它提交到版本库中：
+
+```
+$ touch canIgnore.txt
+$ git add canIgnore.txt
+$ git commit -m "add canIgnore.txt"
+[master 6e759bf] add canIgnore.txt
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 canIgnore.txt
+```
+
+然后我们将`canIgnore.txt`添加到`.gitignore`文件中。
+
+此时再修改`canIgnore.txt`文件，Git不会忽略这个修改：
+
+```
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   canIgnore.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+此时如果要忽略掉对该文件的修改，我们只能手动将其从Git版本库中删除，然后提交：
+
+```
+$ git rm --cached canIgnore.txt
+rm 'canIgnore.txt'
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	deleted:    canIgnore.txt
+$ git commit -m "delete canIgnore.txt"
+[master 1b5811a] delete canIgnore.txt
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 canIgnore.txt
+```
+
+这样对`canIgnore.txt`文件的任何修改都会被Git忽略。
+
 ## 分支管理
 
 在我们开发实际项目的过程中，如果我们提交没有开发完成的代码，会导致整个项目处于不稳定的状态，甚至别人`pull`了代码后没法开发了。但是如果等代码全部开发完再提交，又存在丢失每天进度的风险。
@@ -770,3 +837,4 @@ git push origin --delete tag <tagName>
 > https://www.liaoxuefeng.com/wiki/896043488029600
 > https://juejin.im/post/5eeac089e51d457421362edf
 > https://www.git-tower.com/learn/git/ebook/cn/command-line/advanced-topics/rebase
+> https://www.git-tower.com/learn/git/ebook/cn/command-line/basics/starting-with-an-unversioned-project#start
