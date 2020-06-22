@@ -355,7 +355,7 @@ Changes not staged for commit:
 no changes added to commit (use "git add" and/or "git commit -a")
 ```
 
-此时如果要忽略掉对该文件的修改，我们只能手动将其从Git版本库中删除，然后提交：
+此时如果要忽略掉对该文件的修改，我们只能手动将其从Git的版本库中删除，然后提交：
 
 ```
 $ git rm --cached canIgnore.txt
