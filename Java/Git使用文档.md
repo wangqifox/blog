@@ -946,6 +946,96 @@ To github.com:wangqifox/git-demo.git
 git push origin --delete tag <tagName>
 ```
 
+## Commit message规范
+
+统一团队的`Commit message`非常有必要，方便后续的代码review，版本回退，版本发布等等。
+
+目前规范使用较多的是[Angular 团队的规范](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines)，它的`message`格式如下：
+
+```
+<type>(<scope>): <subject>
+<BLANK LINE>
+<body>
+<BLANK LINE>
+<footer>
+```
+
+每次提交，`Commit message`都包含三个部分：`Header`、`Body`、`Footter`。其中`Header`是必需的，`Body`和`Footer`可以省略。不管是哪一个部分，任何一行都不得超过72个字符（或100个字符）。这是为了避免自动换行影响美观。
+
+`Header`部分只有一行，包括三个字段：`type`（必需）、`scope`（可选）、`subject`（必需）。
+
+**`type`**
+
+`type`用于说明`commit`的类别，可以有以下标识：
+
+- `feat`： 新增feature
+- `fix`: 修复bug
+- `docs`: 仅仅修改了文档，比如README, CHANGELOG, CONTRIBUTE等等
+- `style`: 仅仅修改了空格、格式缩进、逗号等等，不改变代码逻辑
+- `refactor`: 代码重构，没有加新功能或者修复bug
+- `perf`: 优化相关，比如提升性能、体验
+- `test`: 测试用例，包括单元测试、集成测试等
+- `build`: 改变构建流程、或者增加依赖库、工具等
+- `ci`: 对持续集成工具的配置或者脚本的修改（比如：Travis, Circle, BrowserStack, SauceLabs）
+- `chore`: 其他不影响src或test文件的修改
+- `revert`: 回滚到上一个版本
+
+**`scope`**
+
+`scope`用于说明`commit`影响的范围，比如数据层、控制层、视图层等等，视项目不同而不同。
+
+**`subject`**
+
+`subject`是`commit`目的的简短描述，不超过50个字符：
+
+- 以动词开头，使用第一人称现在时，比如change，而不是changed或changes
+- 第一个字母小写
+- 结尾不加句号
+
+`Body`部分是对本次`commit`的详细描述，可以分成多行，有两个注意点：
+
+1. 使用第一人称现在时，比如使用change而不是changed或changes。
+2. 应该说明代码变动的动机，以及与以前行为的对比。
+
+**`Footer`**
+
+`Footer`部分只用于两种情况
+
+1. 不兼容变动
+
+如果当前代码与上一个版本不兼容，则`Footer`部分以`BREAKING CHANGE`开头，后面是对变动的描述、以及变动理由和迁移方法。
+
+2. 关闭Issue
+
+如果当前`commit`针对某个issue，那么可以在`Footer`部分关闭这个issue。
+
+`Closes #234`
+
+也可以一次关闭多个issue。
+
+`Closes #123, #245, #992`
+
+### Commitizen: 替代你的 git commit
+
+`commit`规范写的再好，也有可能因为开发人员的疏忽而破坏掉规范，最好的方法就是通过工具来生成和约束。
+
+这里借助两个工具：
+
+- [commitizen/cz-cli](https://github.com/commitizen/cz-cli)：我们借助它提供的`git cz`命令来替代我们的`git commit`命令，帮助我们生成符合规范的`commit message`。
+
+- [cz-conventional-changelog](https://github.com/commitizen/cz-conventional-changelog)：它用来为`commitizen`指定一个`Adapter`，使得`commitizen`按照我们指定的规范帮助我们生成`commit message`。
+
+
+**全局安装**
+
+```
+npm install -g commitizen cz-conventional-changelog
+echo '{ "path": "cz-conventional-changelog" }' > ~/.czrc
+```
+
+安装过后，可以在项目中执行`git cz`或者`npm run commit`，效果如下：
+
+![git_cz](media/git_cz.png)
 
 
 
@@ -960,6 +1050,8 @@ git push origin --delete tag <tagName>
 > https://www.liaoxuefeng.com/wiki/896043488029600
 > https://juejin.im/post/5eeac089e51d457421362edf
 > https://www.git-tower.com/learn/git/ebook/cn/command-line/advanced-topics/rebase
-> https://www.git-tower.com/learn/git/ebook/cn/command-line/basics/starting-with-an-unversioned-project#start
+> https://www.git-tower.com/learn/git/ebook/cn/command-line/basics/starting-with-an-unversioned-project
 > https://www.jianshu.com/p/952d83fc5bc8
 > https://oschina.gitee.io/learn-git-branching/
+> https://juejin.im/post/5afc5242f265da0b7f44bee4
+> https://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html
