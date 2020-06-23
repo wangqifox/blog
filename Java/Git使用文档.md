@@ -302,10 +302,93 @@ c10b61bb85ea5e3002525b1845e99f58a868c98b modify 1.txt
 git push origin HEAD --force
 ```
 
-`--hard`和`--soft`参数的区别：
+#### `--hard`、`--soft`、`--mixed`参数的区别：
 
-- `git reset –-soft`：回退到某个版本，只回退了commit的信息，不会恢复到index file一级。如果还要提交，直接commit即可
-- `git reset -–hard`：彻底回退到某个版本，本地的源码也会变为上一个版本的内容，撤销的commit中所包含的更改被冲掉
+`--soft`参数表示将本地版本库的头指针全部重置到指定版本，且将这次提交之后的所有变动都移动到暂存区。
+
+假设我们在Git中提交了多个文件，提交记录如下：
+
+```
+$ git log --graph --pretty=oneline --abbrev-commit
+* df960fc - (HEAD -> master) add 8.txt (4 minutes ago) <wangqi>
+* b4eafe5 - add 7.txt (5 minutes ago) <wangqi>
+* 1c7e430 - add 6.txt (9 minutes ago) <wangqi>
+* 640047c - add 5.txt (14 hours ago) <wangqi>
+...
+```
+
+此时执行`git reset --soft`:
+
+```
+$ git reset --soft 640047c
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 4 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   6.txt
+	new file:   7.txt
+	new file:   8.txt
+$ git log --graph --pretty=oneline --abbrev-commit
+* 640047c - (HEAD -> master) add 5.txt (14 hours ago) <wangqi>
+...
+```
+
+我们看到执行`git reset --soft`命令后，`HEAD`指针指向了指定的提交，该提交之后的修改都被放到了暂存区中。
+
+`--mixed`参数与`--soft`参数的区别在于`git reset --mixed`命令执行之后，该提交之后的修改不会放在暂存区中：
+
+```
+$ git reset --mixed 640047c
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 4 commits.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	6.txt
+	7.txt
+	8.txt
+```
+
+`--hard`参数不仅仅将本地版本库的头指针全部重置到指定版本，也会重置暂存区，并且会将工作区的代码也回退到这个版本：
+
+```
+$ git reset --hard 640047c
+HEAD is now at 640047c add 5.txt
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 4 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+```
+
+#### revert命令
+
+`git revert <commit>`命令也能起到回退版本的作用，不用之处在于：
+
+1. `reset`是向前移动指针，`revert `是创建一个提交来覆盖当前的提交，指针向后移动。
+2. `revert `仅仅是撤销某次提交，而`reset`会撤销某个提交点之后所有的提交。
+
+```
+$ git revert 1c7e430
+Removing 6.txt
+[master 7da1247] Revert "add 6.txt"
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 6.txt
+$ git log --graph --pretty=oneline --abbrev-commit
+* 7da1247 (HEAD -> master) Revert "add 6.txt"
+* df960fc add 8.txt
+* b4eafe5 add 7.txt
+* 1c7e430 add 6.txt
+* 640047c add 5.txt
+```
+
+此时工作区中`6.txt`文件被删除，说明Git撤销了`1c7e430`这一次的提交，而这之后的所有提交并没有被撤销。
 
 ### 忽略文件
 
