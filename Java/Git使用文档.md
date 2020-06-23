@@ -765,7 +765,7 @@ origin	git@github.com:wangqifox/git-demo.git (fetch)
 origin	git@github.com:wangqifox/git-demo.git (push)
 ```
 
-可以看到，远程仓库`origin`的地址是`git@github.com:wangqifox/git-demo.git`。如果没有推送权限，就看不到`push`的地址。 
+可以看到，远程仓库`origin`的地址是：[git@github.com:wangqifox/git-demo.git](git@github.com:wangqifox/git-demo.git)。如果没有推送权限，就看不到`push`的地址。 
 
 添加远程仓库之后，可以使用`git push -u origin master`命令将本地仓库的所有内容推送到远程仓库中。加上`-u`参数，Git不但会把本地的`master`分支的内容推送到远程仓库的`master`分支，还会把本地的`master`分支和远程的`master`分支关联起来，在以后的推送或者拉取时就可以简化命令。
 
@@ -961,3 +961,4 @@ git push origin --delete tag <tagName>
 > https://juejin.im/post/5eeac089e51d457421362edf
 > https://www.git-tower.com/learn/git/ebook/cn/command-line/advanced-topics/rebase
 > https://www.git-tower.com/learn/git/ebook/cn/command-line/basics/starting-with-an-unversioned-project#start
+> https://www.jianshu.com/p/952d83fc5bc8
