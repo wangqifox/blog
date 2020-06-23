@@ -1038,9 +1038,33 @@ echo '{ "path": "cz-conventional-changelog" }' > ~/.czrc
 ![git_cz](media/git_cz.png)
 
 
+## 生成Change log
 
+如果所有的`commit`都符合`Angular`格式，那么发布新版本时，`Change log`就可以用脚本自动生成。
 
+生成的文档包括以下3个部分：
 
+- New features
+- Bug fixes
+- Breaking changes.
+
+每个部分都会罗列相关的`commit`，并且有指向这些`commit`的链接。当然，生成的文档允许手动修改，所以发布前，你还可以添加其他内容。
+
+[conventional-changelog](https://github.com/conventional-changelog/conventional-changelog)就是生成`Change log`的工具，安装`conventional-changelog-cli`：
+
+```
+npm install -g conventional-changelog-cli
+```
+
+生成`Change log`有以下两种选择：
+
+```
+# 不会覆盖以前的 Change log，只会在 CHANGELOG.md 的头部加上自从上次发布以来的变动
+$ conventional-changelog -p angular -i CHANGELOG.md -s -p 
+
+# 生成所有发布的 Change log
+$ conventional-changelog -p angular -i CHANGELOG.md -w -r 0
+```
 
 
 
@@ -1055,3 +1079,4 @@ echo '{ "path": "cz-conventional-changelog" }' > ~/.czrc
 > https://oschina.gitee.io/learn-git-branching/
 > https://juejin.im/post/5afc5242f265da0b7f44bee4
 > https://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html
+> https://juejin.im/post/5bd2debfe51d457abc710b57
