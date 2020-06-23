@@ -814,9 +814,9 @@ $ git branch --set-upstream-to=origin/dev dev
 
 ### rebase操作
 
-`rebase`用于代替`merge`操作。**`rebase`操作相对于`merge`操作更加复杂，使用是需要慎重。**
+`rebase`用于代替`merge`操作。**`rebase`操作相对于`merge`操作更加复杂，使用时需要慎重。**
 
-对于合并操作，Git尽量会使用`Fast-forward`模式，这样合并之后两个分支拥有完全相同的历史。
+对于合并操作，Git会尽量使用`Fast-forward`模式，这样合并之后两个分支拥有完全相同的历史。
 
 不过对于两个分支都有新的提交，或者手动禁用`Fast-forward`模式的情况下，Git会创建一个新的提交点，这个提交点整合了两个分支的修改。
 
