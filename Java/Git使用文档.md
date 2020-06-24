@@ -1060,7 +1060,7 @@ npm install -g conventional-changelog-cli
 
 ```
 # 不会覆盖以前的 Change log，只会在 CHANGELOG.md 的头部加上自从上次发布以来的变动
-$ conventional-changelog -p angular -i CHANGELOG.md -s -p 
+$ conventional-changelog -p angular -i CHANGELOG.md -s
 
 # 生成所有发布的 Change log
 $ conventional-changelog -p angular -i CHANGELOG.md -w -r 0
