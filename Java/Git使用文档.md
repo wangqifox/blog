@@ -469,7 +469,8 @@ $ git commit -m "delete canIgnore.txt"
 
 到目前为止，我们在`master`分支上一共有5次提交。此时`master`分支是一条线，`master`指向最新的提交，`HEAD`指向`master`。这样就能确定当前分支，以及当前分支的提交点。
 
-![](https://www.liaoxuefeng.com/files/attachments/919022325462368/0)
+![git_branch_1](media/git_branch_1.png)
+
 
 每次提交，`master`分支都会向前移动一步，这样，随着不断提交，`master`分支也会越来越长。
 
@@ -498,13 +499,13 @@ $ git branch
 
 此时，Git新建了一个指针叫`dev`，指向`master`相同的提交。`HEAD`指向`dev`，表示当前分支在`dev`上。
 
-![](https://www.liaoxuefeng.com/files/attachments/919022363210080/l)
+![git_branch_2](media/git_branch_2.png)
 
 从现在开始，对工作区的修改和提交就是针对`dev`分支了。修改`1.txt`文件并提交。
 
 当我们新提交一次后，`dev`指针往前移动一步，而`master`指针不变：
 
-![](https://www.liaoxuefeng.com/files/attachments/919022387118368/l)
+![git_branch_3](media/git_branch_3.png)
 
 假如我们在`dev`上的工作完成了，就可以把`dev`合并到`master`上。
 
@@ -517,7 +518,7 @@ Switched to branch 'master'
 
 切换回`master`分支后，我们发现刚才对`1.txt`文件的修改不见了，因为刚才的修改是在`dev`分支上完成的，而此时`master`分支此时还指向原来的提交点。
 
-![](https://www.liaoxuefeng.com/files/attachments/919022533080576/0)
+![git_branch_4](media/git_branch_4.png)
 
 现在我们把`dev`分支的修改合并到`master`分支上：
 
@@ -533,7 +534,7 @@ Fast-forward
 
 合并之后`master`和`dev`指向同一个提交点。
 
-![](https://www.liaoxuefeng.com/files/attachments/919022412005504/0)
+![git_branch_5](media/git_branch_5.png)
 
 合并之后，可以删除`dev`分支：
 
@@ -549,7 +550,7 @@ $ git branch
 * master
 ```
 
-![](https://www.liaoxuefeng.com/files/attachments/919022479428512/0)
+![git_branch_6](media/git_branch_6.png)
 
 如果分支已经提交到远程仓库了，可以使用一下命令删除远程分支：
 
@@ -565,7 +566,7 @@ git push origin :<branchName>
 
 假设我们有两个分支`feature1`和`master`，这两个分支同时对`1.txt`文件的最后一行进行了修改并提交，于是我们的分支变成了这样：
 
-![](https://www.liaoxuefeng.com/files/attachments/919023000423040/0)
+![git_branch_7](media/git_branch_7.png)
 
 此时我们再尝试将`feature1`合并到`master`分支中：
 
@@ -619,7 +620,7 @@ $ git commit -m "merge feature1"
 
 现在`master`分支和`feature1`分支变成了下图所示：
 
-![](https://www.liaoxuefeng.com/files/attachments/919023031831104/0)
+![git_branch_8](media/git_branch_8.png)
 
 用带参数的`git log`也可以看到分支的合并情况：
 
@@ -642,7 +643,7 @@ $ git log --graph --pretty=oneline --abbrev-commit
 
 合并分支时，Git会尽量使用`Fast-forward`模式，合并之后的分支如下图所示：
 
-![](https://www.liaoxuefeng.com/files/attachments/919022412005504/0)
+![git_branch_9](media/git_branch_9.png)
 
 这种模式下，删除分支后会丢失掉分支信息。可以在合并分支时加上`--no-ff`参数来禁用`Fast-forward`模式：
 
@@ -665,7 +666,7 @@ Merge made by the 'recursive' strategy.
 
 不使用`Fast-forward`模式，合并之后的分支就像这样：
 
-![](https://www.liaoxuefeng.com/files/attachments/919023225142304/0)
+![git_branch_10](media/git_branch_10.png)
 
 ### git stash && git cherry-pick
 
