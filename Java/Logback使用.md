@@ -413,9 +413,17 @@ logback内置了一个可以灵活配置的`layout`叫做`PatternLayout`。通�
 
 `转换模式`由`字面量`和`格式控制表达式`也叫做`转换说明符`组成。你可以在`转换模式`中自由地插入字面量。每一个`转换说明符`由一个百分号`%`开始，后面跟随可选的`格式修改器`，以及转换字符与括号括起来的可选参数。转换字符需要转换的字段，如：logger的名字，日志级别，日期以及线程名。格式修改器控制字段的宽度，间距以及左右对齐。
 
+### 转换字符
+
 转换字符与它们的可选参数如下：
 
-- c{length}<br>lo{length}<br>logger{length}
+#### logger
+
+```
+c{length}
+lo{length}
+logger{length}
+```
 
 输出`logger`的名字作为日志事件的来源。转换字符接收一个整数作为它的唯一参数。转换器的简写算法将会缩短`logger`的名字，但是通常不会丢失重要的信息。设置`length`的值为0是唯一的例外，它只会保留`logger`名字最右边的部分。其他情况下，`logger`名字最右边的部分不会被简写，即使它的长度比`length`的值要大，其他部分可能会被缩短为一个字符，但是永远不会被移除。示例如下：
 
@@ -429,17 +437,34 @@ logback内置了一个可以灵活配置的`layout`叫做`PatternLayout`。通�
 |%logger{16}|mainPackage.sub.sample.Bar|m.sub.sample.Bar|
 |%logger{26}|mainPackage.sub.sample.Bar|mainPackage.sub.sample.Bar|
 
-- C{length}<br>class{length}
+#### class
+
+```
+C{length}
+class{length}
+```
 
 输出日志请求类的全限定名称。跟`%logger`转换符一样，它也可以接收一个整型的可选参数去缩短类名。0表示特殊含义，在打印类名时将不会输出包的前缀名。默认表示打印类的全限定名。
 
 生成调用者类的信息并不是特别快。因此，应该避免使用，除非执行速度不是问题。
 
-- contextName<br>cn
+#### contextName
+
+```
+contextName
+cn
+```
 
 输出日志事件附加到logger的上下文(context)的名称
 
-- d{pattern}<br>date{pattern}<br>d{pattern, timezone}<br>date{pattern, timezone}
+#### date
+
+```
+d{pattern}
+date{pattern}
+d{pattern, timezone}
+date{pattern, timezone}
+```
 
 用于输出日志事件的日期。`pattern`参数用于指定日志的格式，如果没有指定日期格式，默认为`ISO8601`类型。
 
@@ -447,13 +472,25 @@ logback内置了一个可以灵活配置的`layout`叫做`PatternLayout`。通�
 
 常见错误：对于`HH:mm:ss,SSS`模式，逗号会被解析为分隔符，所以最终会被解析为`HH:mm:ss`，`SSS`会被当做时区。如果在日期模式中使用逗号，那么可以用双引号将日期模式包裹起来：`%date{"HH:mm:ss,SSS"}`。
 
-- F / file
+#### file
+
+```
+F
+file
+```
 
 输出发出日志请求的Java源文件名。
 
 生成文件的信息不是特别快，因此，应该避免使用，除非速度不是问题。
 
-- caller{depth}<br>caller{depthStart..depthEnd}<br>caller{depth, evaluator-1,...evaluator-n}<br>caller{depthStart..depthEnd, evaluator-1,...evaluator-n}
+#### caller
+
+```
+caller{depth}
+caller{depthStart..depthEnd}
+caller{depth, evaluator-1,...evaluator-n}
+caller{depthStart..depthEnd, evaluator-1,...evaluator-n}
+```
 
 输出日志的调用者所在的位置信息。
 
@@ -489,41 +526,82 @@ Caller+0   at mainPackage.sub.sample.Bar.createLoggingRequest(Bar.java:17)
 
 `Evaluators`下面会描述。
 
-- L / line
+#### line
+
+```
+L
+line
+```
 
 输出日志请求所在的行号。
 
 生成行号不是特别快。因此，不建议使用，除非生成速度不是问题。
 
-- m / msg / message
+#### message
+
+```
+m
+msg
+message
+```
 
 输出与日志事件相关联的，由应用程序提供的日志信息。
 
-- M / method
+#### method
+
+```
+M
+method
+```
 
 输出日志请求的方法名。
 
 生成方法名不是特别快，因此，应该避免使用，除非生成速度不是问题
 
-- n
+#### n
+
+```
+n
+```
 
 输出平台所依赖的行分隔字符。
 
 转换字符提供了像`\n`或`\r\n`一样的转换效果。因此指定行分隔符是首选的指定方式。
 
-- p / le / level
+#### level
+
+```
+p
+le
+level
+```
 
 输出日志事件的级别。
 
-- r / relative
+#### relative
+
+```
+r
+relative
+```
 
 输出应用程序启动到创建日志事件所花费的毫秒数。
 
-- t / thread
+#### thread
+
+```
+t
+thread
+```
 
 输出生成日志事件的线程名。
 
-- X{key:-defaultVal}<br>mdc{key:-defaultVal}
+#### mdc
+
+```
+X{key:-defaultVal}
+mdc{key:-defaultVal}
+```
 
 输出生成日志事件的线程的MDC（mapped diagnostic context）。
 
@@ -531,7 +609,16 @@ Caller+0   at mainPackage.sub.sample.Bar.createLoggingRequest(Bar.java:17)
 
 如果没有指定的`key`，那么MDC的整个内容将会以`key1=val1,key2=val2`的格式输出。
 
-- ex{depth}<br>exception{depth}<br>throwable{depth}<br>ex{depth,evaluator-1,...,evaluator-n}<br>exception{depth,evaluator-1,...,evaluator-n}<br>throwable{depth,evaluator-1,...,evaluator-n}
+#### exception/throwable
+
+```
+ex{depth}
+exception{depth}
+throwable{depth}
+ex{depth,evaluator-1,...,evaluator-n}
+exception{depth,evaluator-1,...,evaluator-n}
+throwable{depth,evaluator-1,...,evaluator-n}
+```
 
 输出日志事件关联的异常栈。默认输出整个栈。
 
@@ -574,7 +661,16 @@ mainPackage.foo.bar.TestException: Houston we have a problem
 
 如果你没有指定`%throwable`或者其他跟`throwable`相关的转换字符，那么`PatternLayout`会在最后一个转换字符加上这个，因为堆栈信息非常重要。如果你不想展示堆栈信息，那么可以使用`%nopex`可以替代`%throwable`。
 
-- xEx{depth}<br>xException{depth}<br>xThrowable{depth}<br>xEx{depth,evaluator-1,...,evaluator-n}<br>xException{depth,evaluator-1,...,evaluator-n}<br>xThrowable{depth,evaluator-1,...,evaluator-n}
+#### xException/xThrowable
+
+```
+xEx{depth}
+xException{depth}
+xThrowable{depth}
+xEx{depth,evaluator-1,...,evaluator-n}
+xException{depth,evaluator-1,...,evaluator-n}
+xThrowable{depth,evaluator-1,...,evaluator-n}
+```
 
 跟`%throwable`类似，只不过多了类的包信息。
 
@@ -593,13 +689,22 @@ java.lang.NullPointerException
   ...etc 
 ```
 
-- nopex<br>nopexception
+#### nopexception
+
+```
+nopex
+nopexception
+```
 
 这个转换字符不会输出任何数据，因此它可以用来有效忽略异常信息。
 
 `%nopex`转换字符允许用户重写`PatternLayout`内部的安全机制，该机制将会在没有指定其他处理异常的转换字符时，默认添加`%xThrowable`。
 
-- marker
+#### marker
+
+```
+marker
+```
 
 输出与日志请求相关的标签。
 
@@ -609,19 +714,34 @@ java.lang.NullPointerException
 parentName [ child1, child2 ]
 ```
 
-- property{key}
+#### property
+
+```
+property{key}
+```
 
 输出属性`key`所对应的值。如果`key`在`logger context`中没有找到，那么将会去系统属性中找。
 
 `key`没有默认值，如果缺失，则会展示`Property_HAS_NO_KEY`的错误信息。
 
-- replace(p){r,t}
+#### replace
+
+```
+replace(p){r,t}
+```
 
 在子模式`p`产生的字符中，将所有出现正则表达式`r`的地方替换为`t`。例如，`%replace(%msg){'\s', ''}`将会移除事件消息中所有空格。
 
 模式`p`可以是任意复杂的甚至多个转换字符组成。例如，`%replace(%logger %msg){'\.', '/'}`将会替换`logger`以及消息中所有的`.`为`/`。
 
-- rEx{depth}<br>rootException{depth}<br>rEx{depth,evaluator-1,...,evaluator-n}<br>rootException{depth,evaluator-1,...,evaluator-n}
+#### rootException
+
+```
+rEx{depth}
+rootException{depth}
+rEx{depth,evaluator-1,...,evaluator-n}
+rootException{depth,evaluator-1,...,evaluator-n}
+```
 
 输出与日志事件相关的堆栈信息，根异常将会首先输出，示例如下：
 
