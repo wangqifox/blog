@@ -369,7 +369,7 @@ nothing to commit, working tree clean
 
 #### revert命令
 
-`git revert <commit>`命令也能起到回退版本的作用，不用之处在于：
+`git revert <commit>`命令也能起到回退版本的作用，不同之处在于：
 
 1. `reset`是向前移动指针，`revert `是创建一个提交来覆盖当前的提交，指针向后移动。
 2. `revert `仅仅是撤销某次提交，而`reset`会撤销某个提交点之后所有的提交。
@@ -772,7 +772,7 @@ origin	git@github.com:wangqifox/git-demo.git (push)
 
 再执行`git push -u origin dev`推送`dev`分支的修改到远程仓库。
 
-以后如果要在推送提交到远程仓库就可以简单执行：`git push`，不用再使用完整的命令：`git push origin master`。
+以后如果要再推送提交到远程仓库就可以简单执行：`git push`，不用再使用完整的命令：`git push origin master`。
 
 此时如果有另外的小伙伴`clone`我们的远程仓库，他只能看到`master`分支，看不到本地的`dev`分支。此时可以使用`git branch -a`查看所有的分支：
 
