@@ -948,6 +948,53 @@ destination=${USER_HOME}/${fileName}
 
 `HOSTNAME`在配置期间会被自动定义为上下文范围内。`CONTEXT_NAME`属性对应当前上下文的名字。
 
+### spring中变量的使用
+
+如果要使用spring中定义的变量，logback的配置文件要以`logback-spring.xml`命名，其他如`property`需要修改为`springProperty`。示例：
+
+```
+<configuration>
+    <springProperty scope="context" name="logPath" source="log.path" defaultValue="logs"/>
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <property name="LOG_HOME" value="${logPath}/${appName}"/>
+    <property name="LOG_BACK_HOME" value="${logPath}/${appName}/backup"/>
+
+    <property name="maxFileSize" value="100MB" />
+    <property name="maxHistory" value="60" />
+    <property name="totalSizeCap" value="10GB" />
+
+
+    <!-- INFO日志 -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/info.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_BACK_HOME}/%d{yyyy-MM-dd}/info.%d{HHmmss, aux}.%i.log.gz</fileNamePattern>
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <maxHistory>${maxHistory}</maxHistory>
+            <totalSizeCap>${totalSizeCap}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyyMMddHHmmss} %X{LOG_ID} %-5level %logger{20}.%method\(\) - %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%yellow(%d{yyyyMMddHHmmss}) %X{LOG_ID} %highlight(%-5level) %logger{20}.%method\(\) - %cyan(%msg%n)</pattern>
+        </encoder>
+        <withJansi>true</withJansi>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="INFO_FILE"/>
+    </root>
+</configuration>
+```
+
 
 
 
