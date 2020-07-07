@@ -790,6 +790,25 @@ logback内置了几个`TurboFilter`：
 
 logback可以定时扫描配置文件，发生更改时自动加载：在`<configuration>`标签上添加`scan=true`属性。默认情况下，一分钟扫描一次配置文件。通过`<configuration>`标签上的`scanPeriod`属性可以指定扫描周期。扫描周期可以是毫秒、秒、分钟或者小时。
 
+## 设置context的名字
+
+每一个logger都会附加到一个logger context上去。默认这个logger context的名字的`default`。如果设置过一次就不能再设置。示例：
+
+```
+<configuration>
+    <contextName>myAppName</contextName>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d %contextName [%t] %level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
+```
+
 ## 变量替换
 
 logback支持变量的定义以及替换。变量有它的作用域，可以在配置文件中，外部文件中，外部资源文件中，甚至动态定义。
