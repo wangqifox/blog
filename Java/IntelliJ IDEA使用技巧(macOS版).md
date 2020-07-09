@@ -243,6 +243,10 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 `shift + F6`
 
+### 改变变量的类型
+
+`shift + command + F6`
+
 ### 快速提取常量
 
 `option + command + c`
@@ -270,7 +274,7 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 
 
-> https://www.w3cschool.cn/intellij_idea_doc
+> https://www.jetbrains.com/help/idea/discover-intellij-idea.html
 > https://juejin.im/post/5d47f4e851882534d152a206
 > https://atips.cn/idea/
 > http://blog.didispace.com/intellij-idea-some-features-sam-1/
