@@ -228,9 +228,14 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 `command + j`
 
+![command+j](media/command+j.gif)
+
 ### 生成代码(构造函数、`Getter/Setter`方法、`equals`方法、`hashCode`方法、`toString`方法)
 
 `command + n`
+
+![command+n](media/command+n.gif)
+
 
 ## 重构
 
@@ -252,7 +257,7 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ### 快速提取变量
 
-`option + command + p`
+`option + command + v`
 
 ### 快速提取方法
 
@@ -265,7 +270,7 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 
 
-
+> https://www.w3cschool.cn/intellij_idea_doc
 > https://juejin.im/post/5d47f4e851882534d152a206
 > https://atips.cn/idea/
 > http://blog.didispace.com/intellij-idea-some-features-sam-1/
