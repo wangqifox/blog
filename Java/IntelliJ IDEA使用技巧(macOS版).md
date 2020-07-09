@@ -274,6 +274,7 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 
 
+
 > https://www.jetbrains.com/help/idea/discover-intellij-idea.html
 > https://juejin.im/post/5d47f4e851882534d152a206
 > https://atips.cn/idea/
