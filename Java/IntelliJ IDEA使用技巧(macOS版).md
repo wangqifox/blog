@@ -239,6 +239,10 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ## 重构
 
+### 打开重构对话框
+
+`ctrl + T`
+
 ### 重命名变量、文件、文件夹
 
 `shift + F6`
