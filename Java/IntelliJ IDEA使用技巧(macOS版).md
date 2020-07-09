@@ -195,6 +195,14 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 `option + command + B`
 
+### 接口跳转到实现
+
+`option + command + B`
+
+### 实现跳转到接口
+
+`command + U`
+
 ## 代码编辑
 
 ### 变量大小写切换
@@ -272,6 +280,17 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 `option + command + m`
 
 
+# IntelliJ IDEA提供的注释
+
+IntelliJ IDEA提供了一些注释。IDEA会扫描并分析这些使用注释的代码，如果有问题就会提示用户。注解如下：
+
+- `@Nls`：表示带注释的代码是需要本地化的字符串。
+- `@NonNls`：表示带注释的代码是用户不可见的字符串，它不需要本地化，并且不包含需要本地化的字符串。当你使用`@NonNls`注释代码时，本地化工具将跳过次元素和其他的字符串。
+- `@PropertyKey`：表示方法参数接收必须是特定`resource bundle`中的有效属性。当参数不是`resource bundle`中的有效属性，IDEA会将其显示为错误。
+- `@TestOnly`：表示该方法或者构造器只能在测试代码中被调用
+- `@Contract`：用户可以在该注释中指定方法必须遵守的规则。一旦规则被打破，IDEA就会报错
+- `@Nullable`：表示变量、参数、返回值可以为`null`，IDEA会提示你处理该参数为`null`的情况
+- `@NotNull`：表示变量、参数、返回值不可以为`null`，IDEA会在调用处提示你处理`null`的情况
 
 
 
