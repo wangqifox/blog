@@ -203,6 +203,28 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 `command + U`
 
+### 书签(bookmarks)
+
+#### 设置书签
+
+`F3`
+
+#### 设置带有标记的（mnemonic）书签
+
+便于记忆的书签指的是，我们在设置书签时可以添加一个数字或者字母来标记这个书签。便于之后书签之间的跳转。
+
+`option + F3`
+
+#### 带有标记的书签（mnemonic bookmark）之间的跳转
+
+`ctrl + 数字/字母`
+
+#### 显示所有的书签
+
+`command + F3`
+
+![bookmarks](media/bookmarks.gif)
+
 ## 代码编辑
 
 ### 变量大小写切换
