@@ -121,15 +121,15 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 `shift + command + r`
 
-### 查找class
+### 查找类(class)
 
 `command + o`
 
-### 查找file
+### 查找文件(file)
 
 `shift + command + o`
 
-### 查找symbol
+### 查找符号(symbol)
 
 `option + command + o`
 
@@ -276,6 +276,17 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ![command+n](media/command+n.gif)
 
+### 上下移动选中的代码
+
+`option + shift + 上/下键`
+
+![option+shift+up:down](media/option+shift+up:down.gif)
+
+### 选中所有相同的代码
+
+`ctrl + command + G`
+
+![ctrl+command+g](media/ctrl+command+g.gif)
 
 ## 重构
 
