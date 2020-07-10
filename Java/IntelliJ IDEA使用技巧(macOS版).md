@@ -225,6 +225,16 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ![bookmarks](media/bookmarks.gif)
 
+### 收藏列表
+
+#### 打开收藏夹
+
+`command + 2`
+
+#### 添加到收藏列表
+
+`option + shift + f`
+
 ## 代码编辑
 
 ### 变量大小写切换
