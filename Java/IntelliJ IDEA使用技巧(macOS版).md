@@ -60,6 +60,20 @@ IDEA提供了强大的实时代码模板功能，并且内置了很多模板，�
 - `prS`：生成`private String `
 
 ![my_template](media/my_template.png)
+除了上面简单的`Live Templates`，还可以定义稍微复杂点的模板，控制光标的位置：
+
+```
+/**
+ * $VAR1$
+ */
+private String $VAR2$;
+
+$END$
+```
+
+上面的模板定义了一个带注释的`private String`，光标首先会停留在`$VAR1$`处，写完注释后光标跳到`$VAR2$`处，定义好变量名最后跳到`$END$`。
+
+![live_templates_1](media/live_templates_1.gif)
 
 
 ## Postfix Completion
@@ -89,6 +103,7 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 - `nn`和`notnull`：为对象生成不为`null`判断的框架
 - `null`：为对象生成为`null`判断的框架
 - `return`：在对象前面添加`return`
+- `field`：为类创建成员变量
 - `sout`：为对象包裹`System.out.println()`方法
 - `try`：为表达式生成`try-catch`框架
 
@@ -151,7 +166,14 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ### 查看类继承关系图
 
-`option + command + u`
+```
+option + command + u
+shift + option + command + u
+```
+
+### 查看函数调用层次
+
+`ctrl + option + h`
 
 ### 展示类中变量和方法
 
@@ -237,6 +259,12 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ## 代码编辑
 
+### 自动代码提示
+
+`option + enter`
+
+非常智能，不同场景下有不同的提示。
+
 ### 变量大小写切换
 
 `shift + command + u`
@@ -272,7 +300,10 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ### 生成代码(构造函数、`Getter/Setter`方法、`equals`方法、`hashCode`方法、`toString`方法)
 
-`command + n`
+```
+command + n
+ctrl + enter
+```
 
 ![command+n](media/command+n.gif)
 
@@ -288,6 +319,30 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 ![ctrl+command+g](media/ctrl+command+g.gif)
 
+### 在当前目录下新建文件
+
+`ctrl + option + n`
+
+### 复制当前文件
+
+`F5`
+
+### 移动当前文件
+
+`F6`
+
+### 复制文件名
+
+`command + c`
+
+### 复制完整的文件路径
+
+`shift + command + c`
+
+### 查看剪切板内容
+
+`shift + command + v`
+
 ## 重构
 
 ### 打开重构对话框
@@ -302,26 +357,98 @@ IDEA内置了很多`Postfix Completion`，除了上面演示的`new`和`var`，�
 
 `shift + command + F6`
 
-### 快速提取常量
+### 修改方法的签名
 
-`option + command + c`
-
-### 快速提取参数到方法
-
-`option + command + p`
-
-### 快速提取成员变量
-
-`option + command + f`
+`command + F6`
 
 ### 快速提取变量
 
 `option + command + v`
 
+### 快速提取常量
+
+`option + command + c`
+
+### 快速提取成员变量
+
+`option + command + f`
+
+### 快速提取变量到方法参数
+
+`option + command + p`
+
 ### 快速提取方法
 
 `option + command + m`
 
+## git的集成
+
+### 查看最近修改
+
+`ctrl + shift + option + 上/下键`
+
+### 撤销修改
+
+`option + command + z`
+
+## 代码运行
+
+### 运行光标所在上下文的方法
+
+`ctrl + shift + r`
+
+### 调试光标所在上下文的方法
+
+`ctrl + shift + d`
+
+### 打开历史运行的方法列表
+
+`ctrl + option + r`
+
+### 打开历史调试的方法列表
+
+`ctrl + option + d`
+
+## 断点调试
+
+### 添加/关闭断点
+
+`command + F8`
+
+### 查看所有断点
+
+`shift + command + F8`
+
+### 设置条件断点
+
+`shift + command + F8`
+
+### 表达式求职
+
+`option + F8`
+
+### 单步运行
+
+`F8`
+
+### 单步跟踪
+
+`F7`
+
+### 运行到光标位置
+
+`option + F9`
+
+### resume
+
+```
+option + command + r
+F9
+```
+
+### 设置变量的值
+
+`F2`
 
 # IntelliJ IDEA提供的注释
 
@@ -334,9 +461,6 @@ IntelliJ IDEA提供了一些注释。IDEA会扫描并分析这些使用注释的
 - `@Contract`：用户可以在该注释中指定方法必须遵守的规则。一旦规则被打破，IDEA就会报错
 - `@Nullable`：表示变量、参数、返回值可以为`null`，IDEA会提示你处理该参数为`null`的情况
 - `@NotNull`：表示变量、参数、返回值不可以为`null`，IDEA会在调用处提示你处理`null`的情况
-
-
-
 
 
 
