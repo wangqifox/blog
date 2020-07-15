@@ -259,6 +259,14 @@ shift + option + command + u
 
 ## 代码编辑
 
+### 删除当前行
+
+`command + back space`
+
+### 复制当前行
+
+`command + d`
+
 ### 自动代码提示
 
 `option + enter`
