@@ -407,6 +407,22 @@ protected boolean isNestedArchive(Archive.Entry entry) {
 
 即位于`BOOT-INF/classes/`和`BOOT-INF/lib/`的class文件以及jar包。
 
+资源的加载按照`Spring-Boot-Classpath-Index`中指定的`BOOT-INF/classpath.idx`文件提供的顺序，比如：
+
+```
+- "spring-boot-starter-web-2.3.3.RELEASE.jar"
+- "spring-boot-starter-2.3.3.RELEASE.jar"
+- "spring-boot-2.3.3.RELEASE.jar"
+- "spring-boot-autoconfigure-2.3.3.RELEASE.jar"
+- "spring-boot-starter-logging-2.3.3.RELEASE.jar"
+- "logback-classic-1.2.3.jar"
+- "logback-core-1.2.3.jar"
+- "slf4j-api-1.7.30.jar"
+...
+```
+
+依赖的加载顺序由maven根据**短路优先原则**和**先声明优先原则**来确定，确保不会有相互冲突的依赖。
+
 接着将这个资源列表传递给`LaunchedURLClassLoader`。
 
 Springboot使用这个自定义的`LaunchedURLClassLoader`类加载器来执行后续的程序。当需要加载新的类时，`LaunchedURLClassLoader`就能找到指定的位置去加载类。
@@ -584,3 +600,4 @@ public void run() throws Exception {
 > https://xie.infoq.cn/article/765f324659d44a5e1eae1ee0c
 > https://www.codenong.com/cs106676979/
 > https://blog.csdn.net/BryantLmm/article/details/86305047
+> https://juejin.im/post/6844904194319745037
