@@ -366,15 +366,25 @@ public static void registerUrlProtocolHandler() {
 
 为什么Springboot需要自定义jar包的处理协议？
 
-在JDK里面，jar资源的分隔符是`!/`，但是JDK中只支持一个`!/`，这无法满足Springboot的需求。因此Springboot扩展了`java.util.jar.JarFile`即`org.springframework.boot.loader.jar.JarFile`，它支持多个`!/`，表示jar文件嵌套jar文件、jar文件嵌套目录。
+在JDK里面，jar资源的分隔符是`!/`，但是JDK中只支持一个`!/`，这无法满足Springboot的需求。因此Springboot扩展了`java.util.jar.JarFile`即`org.springframework.boot.loader.jar.JarFile`，它支持多个`!/`，表示jar文件嵌套jar文件、jar文件嵌套目录。文件的url如下所示：
 
-Springboot还定义了一个`org.springframework.boot.loader.archive.Archive`类来定义资源统一访问的接口。比如`getUrl`方法获取资源的url，`getManifest`获取资源的MANIFEST文件，`getNestedArchives`方法获取内部的嵌套资源。还在`Archive`内部定义了一个`Entry`接口，用于表示`Archive`内部的子资源。
-
-`Archive`有两个实现：`JarFileArchive`、`ExplodedArchive`，分别表示jar文件，文件目录。
+```
+jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/classes!/
+jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/lib/spring-boot-starter-web-2.3.3.RELEASE.jar!/
+jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/lib/spring-boot-starter-2.3.3.RELEASE.jar!/
+jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/lib/spring-boot-2.3.3.RELEASE.jar!/
+jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/lib/spring-boot-autoconfigure-2.3.3.RELEASE.jar!/
+jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/lib/spring-boot-starter-logging-2.3.3.RELEASE.jar!/
+...
+```
 
 这是因为Springboot重新扩展了jar文件的协议，因此需要自定义一个jar文件协议的处理器。
 
 通过将包名`org.springframework.boot.loader`追加到系统属性`java.protocol.handler.pkgs`中，来定义jar文件的处理器：`org.springframework.boot.loader.jar.Handler`。
+
+Springboot还定义了一个`org.springframework.boot.loader.archive.Archive`类来定义资源统一访问的接口。比如`getUrl`方法获取资源的url，`getManifest`获取资源的MANIFEST文件，`getNestedArchives`方法获取内部的嵌套资源。还在`Archive`内部定义了一个`Entry`接口，用于表示`Archive`内部的子资源。
+
+`Archive`有两个实现：`JarFileArchive`、`ExplodedArchive`，分别表示jar文件，文件目录。
 
 ### 类加载器
 
@@ -384,11 +394,77 @@ Springboot自定义了一个类加载器：`LaunchedURLClassLoader`，这是为�
 
 但是因为Springboot打出的jar包依赖的各个第三方jar文件，并不在自己的`classpath`下，它们存放在jar包的`BOOT-INF/lib`目录下，如果采用双亲委派机制的话，获取不到这些依赖。因此需要破坏双亲委派机制，使用自定义的类加载器。
 
-在`LaunchedURLClassLoader`创建之前，会先调用`getClassPathArchives`方法获得所有依赖资源来组成`classpath`。
+在`LaunchedURLClassLoader`创建之前，会先调用`getClassPathArchives`方法获得所有依赖资源来组成`classpath`。资源过滤遵循以下规则：
+
+```java
+protected boolean isNestedArchive(Archive.Entry entry) {
+    if (entry.isDirectory()) {
+        return entry.getName().equals(BOOT_INF_CLASSES);
+    }
+    return entry.getName().startsWith(BOOT_INF_LIB);
+}
+```
+
+即位于`BOOT-INF/classes/`和`BOOT-INF/lib/`的class文件以及jar包。
 
 接着将这个资源列表传递给`LaunchedURLClassLoader`。
 
 Springboot使用这个自定义的`LaunchedURLClassLoader`类加载器来执行后续的程序。当需要加载新的类时，`LaunchedURLClassLoader`就能找到指定的位置去加载类。
+
+`LaunchedURLClassLoader`重写了`loadClass`方法，因此jvm会调用该方法来加载类。`loadClass`的执行主要分成两步：
+
+第一步，调用`definePackageIfNecessary(String className)`方法来定义指定类所在的package。`definePackageIfNecessary`方法的关键代码如下：
+
+```java
+String packageEntryName = packageName.replace('.', '/') + "/";
+String classEntryName = className.replace('.', '/') + ".class";
+for (URL url : getURLs()) {
+    try {
+        URLConnection connection = url.openConnection();
+        if (connection instanceof JarURLConnection) {
+            JarFile jarFile = ((JarURLConnection) connection).getJarFile();
+            if (jarFile.getEntry(classEntryName) != null && jarFile.getEntry(packageEntryName) != null
+                    && jarFile.getManifest() != null) {
+                definePackage(packageName, jarFile.getManifest(), url);
+                return null;
+            }
+        }
+    }
+    catch (IOException ex) {
+        // Ignore
+    }
+}
+```
+
+遍历`LaunchedURLClassLoader`中保存的所有目录以及jar包，这些资源是前面调用`getClassPathArchives`方法获取得来的，如果发现这些资源中有存在指定的类，则调用`definePackage`方法保存`packageName`与资源`url`的对应关系，确保jar包与相应的package相关联。
+
+第二步，调用`super.loadClass()`方法来加载指定的类。
+
+这一步是正常的双亲委派机制的流程。类加载器首先调用上层类加载器的`loadClass`方法来尝试加载类，按`LaunchedURLClassLoader`->`AppClassLoader`->`ExtClassLoader`->`BootstrapClassLoader`的顺序依次调用。
+
+上层的类加载器无法加载到jar包中的资源，于是从上往下按`BootstrapClassLoader`->`ExtClassLoader`->`AppClassLoader`->`LaunchedURLClassLoader`的顺序调用下层`findClass`方法。
+
+直到调用`LaunchedURLClassLoader`父类`URLClassLoader`的`findClass`方法，主要代码如下：
+
+```java
+String path = name.replace('.', '/').concat(".class");
+Resource res = ucp.getResource(path, false);
+if (res != null) {
+    try {
+        return defineClass(name, res);
+    } catch (IOException e) {
+        throw new ClassNotFoundException(name, e);
+    }
+} else {
+    return null;
+}
+```
+
+第一步，将类名解析成路径并加上`.class`后缀。
+
+第二步，根据之前注册的资源列表找到指定类所在的资源。关键代码是`Resource res = ucp.getResource(path, false);`。`ucp`是`URLClassPath`实例，里面保存了之前注册的资源列表，遍历该列表并找到指定类所对应的资源url。比如类`org/springframework/boot/SpringApplication.class`对应的资源url为`jar:file:/Users/wangqi/IdeaProjects/springboot-jar-test/target/springboot-jar-test-0.0.1-SNAPSHOT.jar!/BOOT-INF/lib/spring-boot-2.3.3.RELEASE.jar!/org/springframework/boot/SpringApplication.class`。
+
+第三步，最终根据类名以及对应的资源url调用`defineClass`方法完成类的加载并返回。
 
 ### 执行main方法
 
@@ -505,3 +581,4 @@ public void run() throws Exception {
 > https://blog.csdn.net/xiao__gui/article/details/47341385
 > https://juejin.im/post/6844904181304672270
 > https://fangjian0423.github.io/2017/05/31/springboot-executable-jar/
+> https://xie.infoq.cn/article/765f324659d44a5e1eae1ee0c
