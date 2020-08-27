@@ -582,3 +582,5 @@ public void run() throws Exception {
 > https://juejin.im/post/6844904181304672270
 > https://fangjian0423.github.io/2017/05/31/springboot-executable-jar/
 > https://xie.infoq.cn/article/765f324659d44a5e1eae1ee0c
+> https://www.codenong.com/cs106676979/
+> https://blog.csdn.net/BryantLmm/article/details/86305047
