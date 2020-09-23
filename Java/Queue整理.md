@@ -37,11 +37,11 @@ date: 2020/09/22 08:40:00
 
 ## PriorityQueue
 
-`PriorityQueue`是一个基于堆的有序队列，插入到其中的元素经过堆排序形成一个有序的结构，每次删除元素都从堆的顶部删除。
+`PriorityQueue`是一个基于堆的有序无界队列，插入到其中的元素经过堆排序形成一个有序的结构，每次删除元素都从堆的顶部删除。
 
 ## ConcurrentLinkedQueue
 
-`ConcurrentLinkedQueue`是一个基于链表的队列，插入元素时添加到链表的尾部，删除元素时摘除链表的头结点并返回，元素的顺序遵循先进先出原则。它是一个线程安装的类。
+`ConcurrentLinkedQueue`是一个基于链表的无界队列，插入元素时添加到链表的尾部，删除元素时摘除链表的头结点并返回，元素的顺序遵循先进先出原则。`ConcurrentLinkedQueue`是一个线程安全的类。
 
 # BlockingQueue
 
@@ -54,13 +54,13 @@ date: 2020/09/22 08:40:00
 
 一类是一直阻塞的方法：
 
-- `put(e)`：插入元素。如果队列满了，等待队列空出位置。此时如果中断线程，抛出`InterruptedException`异常。
-- `take()`：删除元素。如果队列为空，等待队列有元素进入。此时如果中断线程，抛出`InterruptedException`异常。
+- `put(e)`：插入元素。如果队列满了，等待队列空出位置。等待过程中如果中断线程，抛出`InterruptedException`异常。
+- `take()`：删除元素。如果队列为空，等待队列有元素进入。等待过程中如果中断线程，抛出`InterruptedException`异常。
 
 一类是带有超时的阻塞方法：
 
-- `offer(e, time, unit)`：插入元素。如果队列满了，等待队列空出位置，或者等待时间超时。如果成功插入元素则返回`true`，如果等待时间超时则返回`false`。此时如果中断线程，抛出`InterruptedException`异常。
-- `poll(time, unit)`：删除元素。如果队列为空，等待队列有元素进入，或者等待时间超时。如果元素删除成功则返回被删除的元素，如果等待时间超时则返回`null`。此时如果中断线程，抛出`InterruptedException`异常。
+- `offer(e, time, unit)`：插入元素。如果队列满了，等待队列空出位置，或者等待时间超时。如果成功插入元素则返回`true`，如果等待时间超时则返回`false`。等待过程中如果中断线程，抛出`InterruptedException`异常。
+- `poll(time, unit)`：删除元素。如果队列为空，等待队列有元素进入，或者等待时间超时。如果元素删除成功则返回被删除的元素，如果等待时间超时则返回`null`。等待过程中如果中断线程，抛出`InterruptedException`异常。
 
 `BlockingQueue`的实现类如下图所示：
 
@@ -68,13 +68,13 @@ date: 2020/09/22 08:40:00
 
 ## ArrayBlockingQueue
 
-`ArrayBlockingQueue`是一个基于数组的阻塞队列，它在新建时需要指定队列的容量，因此它是一个有界队列。
+`ArrayBlockingQueue`是一个基于数组的有界阻塞队列，它在新建时需要指定队列的容量。
 
-`ArrayBlockingQueue`使用`Condition`信号量来达到阻塞的目标，默认对锁的抢占是非公平的，可以在新建时指定公平锁。
+`ArrayBlockingQueue`使用`Condition`信号量来达到阻塞的目的。默认对锁的抢占是非公平的，可以在新建时指定公平锁。
 
 ## LinkedBlockingQueue
 
-`LinkedBlockingQueue`是一个基于链表的阻塞队列，它的默认容量为`Integer.MAX_VALUE`，在新建时可以指定容量。
+`LinkedBlockingQueue`是一个基于链表的有界阻塞队列，它的默认容量为`Integer.MAX_VALUE`，在新建时可以指定容量。
 
 `LinkedBlockingQueue`对插入和删除两个操作分配了两个锁，降低了这两个操作竞争锁而阻塞线程的概率，提高了执行效率。
 
@@ -92,7 +92,7 @@ date: 2020/09/22 08:40:00
 
 ## SynchronousQueue
 
-`SynchronousQueue`是一种特殊的队列，队列中不存储元素。`put`方法一直阻塞直到有另外的线程调用`take`方法获取元素，`take`方法也类似只有另外的线程调用`put`方法插入元素`take`方法才会返回。
+`SynchronousQueue`是一种特殊的队列，队列中不存储元素。`put`方法会一直阻塞直到有另外的线程调用`take`方法获取元素，`take`方法也类似，只有另外的线程调用`put`方法插入元素`take`方法才会返回。
 
 `SynchronousQueue`相当于是一个线程同步工具。
 
@@ -103,14 +103,14 @@ date: 2020/09/22 08:40:00
 - `tryTransfer(e)`：尝试将元素交给消费者线程
 - `transfer(e)`：一直阻塞，等待将元素交给消费者线程
 - `tryTransfer(e, timeout, unit)`：等待将元素交给消费者线程，一定时间后返回
-- `hasWaitingConsumer()`：判断时候有等待的消费者线程
+- `hasWaitingConsumer()`：判断是否有等待的消费者线程
 - `getWaitingConsumerCount()`：获得消费者线程的数量
 
 ![TransferQueue](media/TransferQueue.png)
 
 ## LinkedTransferQueue
 
-`LinkedTransferQueue`是`TransferQueue`的实现类，它综合了`LinkedBolckingQueue`和`SynchronousQueue`的功能。`LinkedTransferQueue`通过`CAS`保证线程安全性，相比于`LinkedBlockingQueue`提高了效率。
+`LinkedTransferQueue`是`TransferQueue`的实现类，它综合了`LinkedBlockingQueue`和`SynchronousQueue`的功能。`LinkedTransferQueue`通过`CAS`保证线程安全性，相比于`LinkedBlockingQueue`提高了效率。
 
 `transfer`方法需要等待消费者线程消费元素。`put`方法判断是否有等待的消费线程，如果有则直接将元素交给消费线程，否则将元素添加到队列中，不会一直等待消费者线程。
 
@@ -189,32 +189,32 @@ date: 2020/09/22 08:40:00
 
 一直阻塞：
 
-- `putFirst(e)`：在头部插入元素。如果队列满了，等待队列空出位置。此时如果中断线程，抛出`InterruptedException`异常。
-- `takeFirst()`：在头部删除元素。如果队列为空，等待队列有元素进入。此时如果中断线程，抛出`InterruptedException`异常。
+- `putFirst(e)`：在头部插入元素。如果队列满了，等待队列空出位置。等待过程中如果中断线程，抛出`InterruptedException`异常。
+- `takeFirst()`：在头部删除元素。如果队列为空，等待队列有元素进入。等待过程中如果中断线程，抛出`InterruptedException`异常。
 
 超时时间：
 
-- `offerFirst(e, time, unit)`：在头部插入元素。如果队列满了，等待队列空出位置，或者等待时间超时。如果成功插入元素则返回`true`，如果等待时间超时则返回`false`。此时如果中断线程，抛出`InterruptedException`异常。
-- `pollFirst(time, unit)`：在头部删除元素。如果队列为空，等待队列有元素进入，或者等待时间超时。如果元素删除成功则返回被删除的元素，如果等待时间超时则返回`null`。此时如果中断线程，抛出`InterruptedException`异常。
+- `offerFirst(e, time, unit)`：在头部插入元素。如果队列满了，等待队列空出位置，或者等待时间超时。如果成功插入元素则返回`true`，如果等待时间超时则返回`false`。等待过程中如果中断线程，抛出`InterruptedException`异常。
+- `pollFirst(time, unit)`：在头部删除元素。如果队列为空，等待队列有元素进入，或者等待时间超时。如果元素删除成功则返回被删除的元素，如果等待时间超时则返回`null`。等待过程中如果中断线程，抛出`InterruptedException`异常。
 
 尾部操作方法，根据是否有超时时间分为两类：
 
 一直阻塞：
 
-- `putLast(e)`：在尾部插入元素。如果队列满了，等待队列空出位置。此时如果中断线程，抛出`InterruptedException`异常。
-- `takeLast()`：在尾部删除元素。如果队列为空，等待队列有元素进入。此时如果中断线程，抛出`InterruptedException`异常。
+- `putLast(e)`：在尾部插入元素。如果队列满了，等待队列空出位置。等待过程中如果中断线程，抛出`InterruptedException`异常。
+- `takeLast()`：在尾部删除元素。如果队列为空，等待队列有元素进入。等待过程中如果中断线程，抛出`InterruptedException`异常。
 
 超时时间：
 
-- `offerLast(e, time, unit)`：在尾部插入元素。如果队列满了，等待队列空出位置，或者等待时间超时。如果成功插入元素则返回`true`，如果等待时间超时则返回`false`。此时如果中断线程，抛出`InterruptedException`异常。
-- `pollLast(time, unit)`：在尾部删除元素。如果队列为空，等待队列有元素进入，或者等待时间超时。如果元素删除成功则返回被删除的元素，如果等待时间超时则返回`null`。此时如果中断线程，抛出`InterruptedException`异常。
+- `offerLast(e, time, unit)`：在尾部插入元素。如果队列满了，等待队列空出位置，或者等待时间超时。如果成功插入元素则返回`true`，如果等待时间超时则返回`false`。等待过程中如果中断线程，抛出`InterruptedException`异常。
+- `pollLast(time, unit)`：在尾部删除元素。如果队列为空，等待队列有元素进入，或者等待时间超时。如果元素删除成功则返回被删除的元素，如果等待时间超时则返回`null`。等待过程中如果中断线程，抛出`InterruptedException`异常。
 
 ![BlockingDeque](media/BlockingDeque.png)
 
 
 ## LinkedBlockingDeque
 
-`LinkedBlockingDeque`是一个基于链表的阻塞双端队列。
+`LinkedBlockingDeque`是一个基于链表的有界阻塞双端队列。
 
 
 
