@@ -85,7 +85,7 @@ server {
 
 > http://liuluo129.iteye.com/blog/1943311
 
-## `proxy_set_header`
+## `proxy_set_header`其他设置
 
 ### `proxy_set_header X-real-ip $remote_addr;`
 
