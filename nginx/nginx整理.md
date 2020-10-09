@@ -7,6 +7,8 @@ date: 2017/12/22 11:17:00
 
 - `$args`：这个变量等于GET请求中的参数。例如foo=123&bar=456，这个变量只能被修改
 - `$host`：请求中的主机头(HOST)字段，如果请求中的主机头不可用或者空，则为处理请求的server名称(处理请求的server的server_name指令的值)。值为小写，不包含端口
+- `$http_host`: 原始请求的host
+- `$http_port`: 原始请求的port
 - `$remote_addr`：客户端的IP地址
 - `$remote_port`：客户端的端口
 - `$request_uri`：这个变量等于包含一些客户端请求参数的原始URI，它无法修改，请查看$uri更改或重写URI
@@ -85,42 +87,44 @@ server {
 
 ## `proxy_set_header`
 
-- `proxy_set_header X-real-ip $remote_addr;`
+### `proxy_set_header X-real-ip $remote_addr;`
 
-	经过反向代理后，由于在客户端和web服务器之间增加了中间层，因此web服务器无法直接拿到客户端的ip，通过`$remote_addr`变量拿到的将是反向代理服务器的ip地址。但是，nginx是可以获得用户的真实ip的，也就是说nginx使用`$remote_addr`变量时获得的是用户的真实ip，如果我们想要在web端获得用户的真实ip，就必须在nginx这里作一个赋值操作，如下：
+经过反向代理后，由于在客户端和web服务器之间增加了中间层，因此web服务器无法直接拿到客户端的ip，通过`$remote_addr`变量拿到的将是反向代理服务器的ip地址。但是，nginx是可以获得用户的真实ip的，也就是说nginx使用`$remote_addr`变量时获得的是用户的真实ip，如果我们想要在web端获得用户的真实ip，就必须在nginx这里作一个赋值操作，如下：
 	
-	```
-	proxy_set_header X-real-ip $remote_addr;
-	```
+```
+proxy_set_header X-real-ip $remote_addr;
+```
 	
-	其中这个`X-real-ip`是一个自定义的变量名，名字可以随意取，这样做完之后，用户的真实ip就被放在`X-real-ip`这个变量里了，然后在web端可以这样获取：
+其中这个`X-real-ip`是一个自定义的变量名，名字可以随意取，这样做完之后，用户的真实ip就被放在`X-real-ip`这个变量里了，然后在web端可以这样获取：
 	
-	```
-	request.getAttribute("X-real-ip")
-	```
+```
+request.getAttribute("X-real-ip")
+```
 
 - `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
 
-	`X-Forwarded-For`变量用于识别通过HTTP代理或负载平衡器原始IP这个连接到web服务器的客户机地址的非rfc标准，如果有做`X-Forwarded-For`设置的话，每次经过proxy转发都会有记录，格式就是`client1,proxy1,proxy2`，以逗号隔开各个地址，由于它是非rfc标准，所以默认是没有的，需要强制添加，在默认情况下经过proxy转发的请求，在后端看来远程地址都是proxy端的ip。也就是说在默认情况下我们使用`request.getAttribute("X-Forwarded-For")`获取不到用户的ip，如果我们想要通过这个变量获得用户的ip，我们需要自己在nginx添加如下配置：
+`X-Forwarded-For`变量用于识别通过HTTP代理或负载平衡器原始IP这个连接到web服务器的客户机地址的非rfc标准，如果有做`X-Forwarded-For`设置的话，每次经过proxy转发都会有记录，格式就是`client1,proxy1,proxy2`，以逗号隔开各个地址，由于它是非rfc标准，所以默认是没有的，需要强制添加，在默认情况下经过proxy转发的请求，在后端看来远程地址都是proxy端的ip。也就是说在默认情况下我们使用`request.getAttribute("X-Forwarded-For")`获取不到用户的ip，如果我们想要通过这个变量获得用户的ip，我们需要自己在nginx添加如下配置：
 	
-	```
-	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-	```
+```
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+```
 	
-	意思是增加一个`$proxy_add_x_forwarded_for`到`X-Forwarded-For`里去，注意是增加，而不是覆盖，当然由于默认的`X-Forwarded-For`值是空的，所以我们总感觉到`X-Forwarded-For`的值等于`$proxy_add_x_forwarded_for`的值，实际上当你搭建两台nginx在不同ip上，并且都使用了这段配置，那你会发现在web服务器端通过`request.getAttribute("X-Forwarded-For")`获得的将会是客户端ip和第一台nginx的ip。
+意思是增加一个`$proxy_add_x_forwarded_for`到`X-Forwarded-For`里去，注意是增加，而不是覆盖，当然由于默认的`X-Forwarded-For`值是空的，所以我们总感觉到`X-Forwarded-For`的值等于`$proxy_add_x_forwarded_for`的值，实际上当你搭建两台nginx在不同ip上，并且都使用了这段配置，那你会发现在web服务器端通过`request.getAttribute("X-Forwarded-For")`获得的将会是客户端ip和第一台nginx的ip。
 	
-	- `$proxy_add_x_forwarded_for`
+#### `$proxy_add_x_forwarded_for`
 
-		`$proxy_add_x_forwarded_for`变量包含客户端请求头中的`X-Forwarded-For`与`$remote_addr`两部分，他们之间用逗号分开。
-		
-		举个例子，有一个web应用，在它之前通过了两个nginx转发，即用户访问该web通过两台nginx。
-		
-		在第一台`nginx`中，使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`。现在的`$proxy_add_x_forwarded_for`变量的`X-Forwarded-For`部分是空的，所以只有`$remote_addr`，而`$remote_addr`的值是用户的ip，于是赋值以后，`X-Forwarded-For`变量的值就是用户的真实ip地址了。
-		
-		到了第二台nginx，使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`。现在的`$proxy_add_x_forwarded_for`变量，`X-Forwarded-For`部分包含的是用户的真实ip，`$remote_addr`部分的值是上一台nginx的ip地址，于是通过这个赋值以后现在的`X-Forwarded-For`的值就变成了"用户的真实ip，第一台nginx的ip"。
-		
-	- `$http_x_forwarded_for`变量，这个变量就是`X-Forwarded-For`，由于之前我们说了，默认的这个`X-Forwarded-For`是为空的，所以当我们直接使用`proxy_set_header X-Forwarded-For $http_x_forwarded_for`时会发现，web服务器端使用`request.getAttribute("X-Forwarded-For")`获得的值是null。如果想要通过`request.getAttribute("X-Forwarded-For")`获得用户ip，就必须先使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`，这样就可以获得用户真实ip
+`$proxy_add_x_forwarded_for`变量包含客户端请求头中的`X-Forwarded-For`与`$remote_addr`两部分，他们之间用逗号分开。
 	
+举个例子，有一个web应用，在它之前通过了两个nginx转发，即用户访问该web通过两台nginx。
+	
+在第一台`nginx`中，使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`。现在的`$proxy_add_x_forwarded_for`变量的`X-Forwarded-For`部分是空的，所以只有`$remote_addr`，而`$remote_addr`的值是用户的ip，于是赋值以后，`X-Forwarded-For`变量的值就是用户的真实ip地址了。
+	
+到了第二台nginx，使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`。现在的`$proxy_add_x_forwarded_for`变量，`X-Forwarded-For`部分包含的是用户的真实ip，`$remote_addr`部分的值是上一台nginx的ip地址，于是通过这个赋值以后现在的`X-Forwarded-For`的值就变成了"用户的真实ip，第一台nginx的ip"。
+	
+#### `$http_x_forwarded_for`
+
+这个变量就是`X-Forwarded-For`，由于之前我们说了，默认的这个`X-Forwarded-For`是为空的，所以当我们直接使用`proxy_set_header X-Forwarded-For $http_x_forwarded_for`时会发现，web服务器端使用`request.getAttribute("X-Forwarded-For")`获得的值是null。如果想要通过`request.getAttribute("X-Forwarded-For")`获得用户ip，就必须先使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`，这样就可以获得用户真实ip
+
 > http://gong1208.iteye.com/blog/1559835
 
 ## nginx配置proxy_pass代理转发
