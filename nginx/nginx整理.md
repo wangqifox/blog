@@ -101,7 +101,7 @@ proxy_set_header X-real-ip $remote_addr;
 request.getAttribute("X-real-ip")
 ```
 
-- `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
+### `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
 
 `X-Forwarded-For`变量用于识别通过HTTP代理或负载平衡器原始IP这个连接到web服务器的客户机地址的非rfc标准，如果有做`X-Forwarded-For`设置的话，每次经过proxy转发都会有记录，格式就是`client1,proxy1,proxy2`，以逗号隔开各个地址，由于它是非rfc标准，所以默认是没有的，需要强制添加，在默认情况下经过proxy转发的请求，在后端看来远程地址都是proxy端的ip。也就是说在默认情况下我们使用`request.getAttribute("X-Forwarded-For")`获取不到用户的ip，如果我们想要通过这个变量获得用户的ip，我们需要自己在nginx添加如下配置：
 	
