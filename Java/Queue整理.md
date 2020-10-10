@@ -161,7 +161,7 @@ date: 2020/09/22 08:40:00
 
 |`Stack`中的方法|`Deque`中相等的方法|
 |---|---|
-|`push(e)`|`addLast(e)`|
+|`push(e)`|`addFirst(e)`|
 |`pop()`|`removeFirst()`|
 |`peek()`|`peekFirst()`|
 
