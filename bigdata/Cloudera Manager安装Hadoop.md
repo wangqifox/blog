@@ -150,7 +150,7 @@ server 2.pool.ntp.org
 ## 设置时区
 
 1. 执行`tzselect`，选择北京时间
-2. 复制配置文件到`/etc`目录下:`sudo cp /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime`
+2. 复制配置文件到`/etc`目录下:`sudo cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime`
 
 ## 禁用交换分区
 
@@ -161,9 +161,17 @@ echo 'vm.swappiness=1' | sudo tee -a /etc/sysctl.conf
 
 # 安装Cloudera Manager
 
-## 本地源的搭建
+Cloudera Manager提供3种安装方式：
 
-Cloudera Manager提供在线安装的方式，但是访问国外的网络非常慢，容易安装失败，所以我们先将安装包放在局域网的中，然后再从局域网中安装。
+- 第一种使用`cloudera-manager-installer.bin`安装程序来在线安装。
+- 第二种使用`rpm`、`yum`、`apt-get`命令的方式来在线安装。
+- 第三种使用`tarball`的方式离线安装
+
+第一种方式是最方便的，就像安装一个客户端软件一下就可以。但是和第二种方式一样都属于在线安装，安装过程需要访问国外网站，整个过程非常慢，容易安装失败。
+
+采用`tarball`的方式需要将安装包手动传到集群的每一台机器，安装起来比较繁琐。我们最终采用在线与离线两种安装方式的混搭：搭建本地源的方式来在线安装从而避开国外网站访问的限制。
+
+## 本地源的搭建
 
 1. 下载cm6的安装包
 
@@ -172,12 +180,12 @@ Cloudera Manager提供在线安装的方式，但是访问国外的网络非常�
 ![cm6_download_page](media/cm6_download_page.png)
 
 
-2. 解压之后上传到nginx的静态服务器中，路径为`/cm6/6.3.1/ubuntu1804/apt/`
+2. 解压之后上传到局域网的某个nginx静态服务器中，路径为`/cm6/6.3.1/ubuntu1804/apt/`。如下图所示，如果可以正常访问，那么本地源就搞定了。
 
 ![local_source](media/local_source.png)
 
 
-3. 设置Cloudera Manager安装包的源：
+3. 每个节点都需要配置Cloudera Manager的离线源：
 
 `sudo vim /etc/apt/sources.list.d/cloudera-manager.list`
 
@@ -198,17 +206,17 @@ sudo apt-get update
 
 ## 安装Cloudera Manager包
 
-master节点：
+在master节点中执行：
 
 `sudo apt-get install cloudera-manager-daemons cloudera-manager-server cloudera-manager-agent`
 
-slave节点：
+在slave节点中执行：
 
 `sudo apt-get install cloudera-manager-daemons cloudera-manager-agent`
 
 ## 设置数据库
 
-###  创建CDH依赖的数据库以及用户
+### 创建CDH依赖的数据库以及用户
 
 ```
 -- 创建数据库
@@ -263,7 +271,7 @@ sudo ./scm_prepare_database.sh mysql sentry sentry sentry123456
 
 ![cdh6_download_page](media/cdh6_download_page.png)
 
-在master节点执行：
+将CDH的parcels包下载到master节点的指定位置，执行：
 
 ```
 cd /opt/cloudera/parcel-repo
@@ -274,11 +282,13 @@ wget https://archive.cloudera.com/cdh6/6.3.2/parcels/manifest.json
 mv CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha1 CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha
 ```
 
+注意要将`CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha1`文件重命名为`CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha`。
+
 ## 启动服务
 
-`sudo service cloudera-scm-server start`
+master节点执行：`sudo service cloudera-scm-server start`
 
-`sudo service cloudera-scm-agent start`
+slave节点执行：`sudo service cloudera-scm-agent start`
 
 ## 配置Cloudera Manager
 
@@ -319,7 +329,7 @@ mv CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha1 CDH-6.3.2-1.cdh6.3.2.p0.16
 ![cm_setup_7](media/cm_setup_7.png)
 
 
-8. 配置8
+8. 检查整个集群
 
 ![cm_setup_8](media/cm_setup_8.png)
 
@@ -330,9 +340,12 @@ mv CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha1 CDH-6.3.2-1.cdh6.3.2.p0.16
 ![cm_setup_9](media/cm_setup_9.png)
 
 
-10. 等待服务安装成功
+10. 耐心等待整个集群服务安装成功
 
 ![cm_setup_10](media/cm_setup_10.png)
+11. 服务全部启动成功
+
+![cm_setup_11](media/cm_setup_11.png)
 
 
 ## 测试hadoop
@@ -340,4 +353,14 @@ mv CDH-6.3.2-1.cdh6.3.2.p0.1605554-bionic.parcel.sha1 CDH-6.3.2-1.cdh6.3.2.p0.16
 ```
 sudo -u hdfs hadoop jar /opt/cloudera/parcels/CDH-6.3.2-1.cdh6.3.2.p0.1605554/lib/hadoop-mapreduce/hadoop-mapreduce-examples.jar pi 100 100
 ```
+
+在yarn的监控页面我们看到任务正在运行。
+
+![yarn_web](media/yarn_web.png)
+
+
+成功运行说明我们的hadoop已经安装成功了。
+
+![cm_test](media/cm_test.png)
+
 
