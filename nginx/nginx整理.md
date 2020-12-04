@@ -1,6 +1,7 @@
 ---
 title: nginx整理
 date: 2017/12/22 11:17:00
+updated: 2020/12/03 19:48:00
 ---
 
 ## 内置预定义变量
@@ -126,6 +127,130 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 这个变量就是`X-Forwarded-For`，由于之前我们说了，默认的这个`X-Forwarded-For`是为空的，所以当我们直接使用`proxy_set_header X-Forwarded-For $http_x_forwarded_for`时会发现，web服务器端使用`request.getAttribute("X-Forwarded-For")`获得的值是null。如果想要通过`request.getAttribute("X-Forwarded-For")`获得用户ip，就必须先使用`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`，这样就可以获得用户真实ip
 
 > http://gong1208.iteye.com/blog/1559835
+
+## location表达式的优先级
+
+location的语法规则如下：
+
+```
+location [ = | ~ | ~* | ^~ ] uri { ... }
+location @name { ... }
+```
+
+语法规则很简单，一个`location`关键字，后面跟着可选的修饰符，后面是要匹配的字符，花括号中是要执行的操作。
+
+### 修饰符以及匹配优先级
+
+1. `=`：表示精确匹配。只有请求的url路径与后面的字符串完全相等时，才会命中。
+2. `^~`：表示普通字符串匹配。使用前缀匹配。如果匹配成功，则不再匹配其他location。
+3. `~*`：表示该规则是使用正则定义的，不区分大小写。
+4. `~`：表示该规则是使用正则定义的，区分大小写。
+5. 无修饰符：表示普通路径的前缀匹配。
+
+### 匹配过程
+
+首先对请求的url序列化。例如，对`%xx`等字符进行解码，去除url中多个相连的`/`，解析url中的`.`，`..`等。这一步是匹配的前置工作。
+
+location有两种表示形式，一种是使用前缀字符，一种是使用正则。如果是正则的话，前面有`~`或`~*`修饰符。
+
+具体的匹配过程如下：
+
+1. 首先先检查使用前缀字符定义的location，选择最长匹配的项并记录下来。
+2. 如果找到了精确匹配的location，也就是使用了`=`修饰符的location，结束查找，使用它的配置。
+3. 然后按顺序查找使用正则定义的location，如果匹配则停止查找，使用它定义的配置。
+4. 如果没有匹配的正则location，则使用前面记录的最长匹配前缀字符location
+
+基于以上的匹配过程，我们可以知道：
+
+1. 使用正则定义的location在配置文件中出现的顺序很重要。因为找到第一个匹配的正则后，查找就停止了，后面定义的正则就是再匹配也没有机会了。
+2. 使用精确匹配可以提高查找的速度。例如经常请求`/`的话，可以使用`=`来定义location。
+
+### 示例
+
+假设有下面这段配置文件：
+
+```
+location = / {
+    [ configuration A ]
+}
+
+location / {
+    [ configuration B ]
+}
+
+location /user/ {
+    [ configuration C ]
+}
+
+location ~* /images/.* {
+    [ configuration D ]
+}
+
+location ~* \.(git|jpg|jpeg)$ {
+    [ configuration E ]
+}
+```
+
+- 请求`/`精准匹配A，不再往下查找。
+- 请求`/index.html`匹配B。首先查找匹配的前缀字符，找到最长匹配是配置B，接着又按照顺序查找匹配的正则。结果没有找到，因此使用先前标记的最长匹配，即配置B。
+- 请求`/user/index.html`匹配C。首先找到最长匹配C，由于后面没有匹配的正则，所以使用最长匹配C。
+- 请求`/user/1.jpg`匹配E。首先进行前缀字符的查找，找到最长匹配项C，继续进行正则查找，找到匹配项E，因此使用E。
+- 请求`/images/1.jpg`匹配D。首先找到最长匹配B，接着进行正则的匹配，由于D的顺序在E之前，匹配到D之后就结束，因此使用D。
+- 请求`/test`匹配B。因此B表示任何以`/`开头的url都匹配。其他规则都不匹配，因此使用B。
+
+
+如果在配置文件中添加一个F规则：
+
+```
+location = / {
+    [ configuration A ]
+}
+
+location / {
+    [ configuration B ]
+}
+
+location /user/ {
+    [ configuration C ]
+}
+
+location ~* /images/.* {
+    [ configuration D ]
+}
+
+location ~* \.(git|jpg|jpeg)$ {
+    [ configuration E ]
+}
+
+location ^~ /images/ {
+    [ configuration F ]
+}
+```
+
+- 请求`/images/1.jpg`匹配F。因为`^~`修饰符的优先级高于正则，匹配到F之后不再匹配其他规则。
+
+### `@name`的用法
+
+`@`用来定义一个命名location。主要用于内部重定向，不能用来处理正常的请求。其用法如下：
+
+```
+location / {
+    try_files $uri $uri/ @custom
+}
+location @custom {
+    # ...do something
+}
+```
+
+上例中，当尝试访问url找不到对应的文件就重定向到我们自定义的命名location（此处为custom）。
+
+值的注意的是，命名location中不能再嵌套其他的命名location。
+
+
+> https://www.cnblogs.com/zjfjava/p/10760157.html
+> https://segmentfault.com/a/1190000013267839
+> https://blog.csdn.net/qq_31772441/article/details/107072564
+> https://segmentfault.com/a/1190000012829367
 
 ## nginx配置proxy_pass代理转发
 
