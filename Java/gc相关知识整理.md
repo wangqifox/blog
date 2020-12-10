@@ -275,13 +275,29 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.211-b12, mixed mode)
 
 - -XX:MetaspaceSize=size：
 
-    设置元数据区第一次触发垃圾收集的初始阈值。该阈值会根据元数据区的使用情况动态增减。
+    设置Metaspace第一次触发垃圾收集的初始阈值。该阈值会根据Metaspace的使用情况动态增减。
     
     Metaspace由于使用不断扩容到`-XX:MetaspaceSize`参数指定的量，就会发生Full GC；且之后每次Metaspace扩容都可能会发生Full GC。
 
 - -XX:MaxMetaspaceSize=size：
 
-    设置元数据区最大可分配的直接内存的大小。默认该大小是没有限制的。
+    设置Metaspace最大可分配的直接内存的大小。默认该大小是没有限制的。
+    
+- -XX:MinMetaspaceFreeRatio=size：
+
+    设置Metaspace最小空闲空间比。如果空闲比小于这个参数，那么Metaspace就会停止增长。默认值为`40`，也就是`40%`。设置该参数可以控制Metaspace的增长速度，太小的值会导致Metaspace增长缓慢，Metaspace使用逐渐趋于饱和，可能会影响之后类的加载。而太大的值会导致Metaspace增长过快，浪费内存。
+
+- -XX:MaxMetaspaceFreeRatio=size：
+
+    设置Metaspace最大空闲空间比。如果空闲比大于这个参数，那么虚拟机会释放Metaspace的部分空间。默认值为`70`，也就是`70%`。
+
+- -XX:MinMetaspaceExpansion=size：
+
+    Metaspace增长的最大幅度。
+
+- -XX:MaxMetaspaceExpansion=size：
+
+    Metaspace增长的最小幅度。
 
 - -XX:MinHeapDeltaBytes：
 
@@ -673,6 +689,7 @@ Tenuring Threshold与Max Tenuring Threshold区别：Max Tenuring Threshold是一
 > https://www.jianshu.com/p/c321d0808a1b
 > https://blog.csdn.net/qq_27093465/article/details/106524222
 > https://blog.csdn.net/qq_27093465/article/details/106760961
+> https://blog.csdn.net/liubenlong007/article/details/78143285
 
 
 
