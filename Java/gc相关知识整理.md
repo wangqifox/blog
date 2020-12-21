@@ -209,7 +209,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.211-b12, mixed mode)
 
 ##### 高级JIT编译器参数(Advanced JIT Compiler Options)
 
-高级运行时参数用于控制HotSpot VM中JIT的行为。
+高级JIT编译器参数用于控制HotSpot VM中JIT的行为。
 
 - -XX:CICompilerCount=threads：
 
@@ -293,11 +293,11 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.211-b12, mixed mode)
 
 - -XX:MinMetaspaceExpansion=size：
 
-    Metaspace增长的最大幅度。
+    Metaspace增长的最小幅度。
 
 - -XX:MaxMetaspaceExpansion=size：
 
-    Metaspace增长的最小幅度。
+    Metaspace增长的最大幅度。
 
 - -XX:MinHeapDeltaBytes：
 
@@ -338,7 +338,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.211-b12, mixed mode)
 | -XX:+PrintGCTaskTimeStamps | 打印每个GC工作线程的时间戳 | false |
 | -XX:+PrintGCTimeStamps | 打印每次GC的时间戳 | false |
 | -XX:+PrintHeapAtGC | 打印每次GC回收前与回收后的堆信息 | false |
-| -Xloggc:filename | gc日志重定向到指定文件中 |  |
+| -Xloggc:filename | gc日志重定向到指定文件中 | - |
 
 
 ### 新生代收集器
@@ -388,13 +388,13 @@ Parallel Old是Parallel Scavenge收集器的老年代版本，使用多线程和
 
 #### CMS收集器
 
-CMS收集器是一种以获取最短回收停顿时间为目标的收集器，它基使用“标记-清除”算法。
+CMS收集器是一种以获取最短回收停顿时间为目标的收集器，它使用“标记-清除”算法。
 
 CMS收集器运作过程分为4个步骤：
 
 - 初始标记（CMS initial mark）：仅仅只是标记一下GC Roots能直接关联到的对象，速度很快。需要“Stop The World”。
 - 并发标记（CMS concurrent mark）：进行GC Roots Tracing的过程，在整个过程中耗时最长。
-- 重新标记（CMS remark）：为了修正并发标记期间因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始标记阶段稍长一些，但远比并发标记的时间短。
+- 重新标记（CMS remark）：为了修正并发标记期间因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，需要“Stop The World”。这个阶段的停顿时间一般会比初始标记阶段稍长一些，但远比并发标记的时间短。
 - 并发清除（CMS concurrent sweep）
 
 由于整个过程中耗时最长的并发标记和并发清除过程收集器线程都可以与用户线程一起工作，所以，从总体上来说，CMS收集器的内存回收过程是与用户线程一起并发执行的。
@@ -411,7 +411,7 @@ G1是一款面向服务器端的垃圾收集器，应用在多处理器和大容
 
 - 像CMS收集器一样，能与应用程序线程并发执行
 - 整理空闲空间更快
-- 需要GC停顿时间更好预测
+- 需要的GC停顿时间更好预测
 - 不希望牺牲大量的吞吐性能
 - 不需要更大的Java Heap
 
@@ -443,13 +443,13 @@ G1有一个全局并发标记周期的概念，即`concurrent marking cycle`，G
 G1的并发标记周期主要包括如下几个过程：
 
 - 初始化标记（initial Mark）：STW阶段。它伴随着一次普通的Young GC发生，这么做的好处是没有额外的、单独的暂停阶段。这个阶段主要是找出所有的根Region集合。
-- 并发根分区扫描（concurrent root region scan）：并发阶段。扫描那些根分区（root region）集合——Oracle官方介绍的根分区集合是那些对老年代有引用的Survivor分区，标记所有从根分区集合可直接到达的对象并将它们的字段压入扫描栈（marking stack）中等待后续扫描。G1使用外部的bitmap来记录mark信息，而不使用对象头的mark word里的mark bit（JDK12的Shenandoah GC是使用对象头）。这个过程是和应用线程一起运行的，另外需要注意的是，这个阶段必须在下一次Young GC发生之前完成，如果扫描过程中，Eden区耗尽，那么一定要等待根分区扫描完成c才能进行Young GC。
+- 并发根分区扫描（concurrent root region scan）：并发阶段。扫描那些根分区（root region）集合——Oracle官方介绍的根分区集合是那些对老年代有引用的Survivor分区，标记所有从根分区集合可直接到达的对象并将它们的字段压入扫描栈（marking stack）中等待后续扫描。G1使用外部的bitmap来记录mark信息，而不使用对象头的mark word里的mark bit（JDK12的Shenandoah GC是使用对象头）。这个过程是和应用线程一起运行的，另外需要注意的是，这个阶段必须在下一次Young GC发生之前完成，如果扫描过程中，Eden区耗尽，那么一定要等待根分区扫描完成才能进行Young GC。
 - 并发标记（concurrent Mark）：并发阶段，继续扫描，不断从上一个阶段的扫描栈中取出引用递归扫描整个堆里所有存活的对象图。每扫描到一个对象就会对其标记，并将其字段压入扫描栈。重复扫描过程，直到扫描栈清空。另外，需要注意的是，这个阶段可以被Young GC中断。
 - 最终标记（remark）：STW阶段。彻底完成堆中存活对象的标记工作.
 - 清理阶段（cleanup）：STW阶段。这个过程主要是从bitmap里统计每个Region被标记为存活的对象，计算存活对象的统计信息，然后将它们按照存活状况（liveness）进行排列。并且会找出完全空闲的Region，然后回收掉这些完全空闲的Region，并将空间返回到可分配的Region集合中。需要说明的是，这个阶段不会有拷贝动作，因为不需要，清理阶段只回收完全空闲的Region而已，还有存活对象的Region，需要接下来的Mixed GC才能回收。
 - evacuation：STW阶段，这个阶段会把存活的对象拷贝到全新的还未使用的Region中，G1的这个过程有两种选定CSet的模式。既可以由Young GC来完成，只回收年轻代，也可能是Mixed GC来完成，即回收年轻代又回收（部分）老年代。
 
-#### 收集器
+#### 分代收集器
 
 G1垃圾收集器分为Young GC以及Mixed GC。
 
@@ -690,6 +690,7 @@ Tenuring Threshold与Max Tenuring Threshold区别：Max Tenuring Threshold是一
 > https://blog.csdn.net/qq_27093465/article/details/106524222
 > https://blog.csdn.net/qq_27093465/article/details/106760961
 > https://blog.csdn.net/liubenlong007/article/details/78143285
+> https://www.zybuluo.com/changedi/note/975529
 
 
 
