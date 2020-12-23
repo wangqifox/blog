@@ -189,3 +189,5 @@ public class Node {
 > https://www.iteye.com/topic/470404
 > https://www.jianshu.com/p/9d729c9c94c4
 > https://www.javadoop.com/post/metaspace
+> https://juejin.cn/post/6844903768077647880
+> https://cloud.tencent.com/developer/article/1408827
