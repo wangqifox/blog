@@ -5,6 +5,8 @@ date: 2022/12/06 22:16:00
 
 最近在ubuntu 22.04上安装docker 19.03之后发现docker启动容器会报错：`cgroups: cgroup mountpoint does not exist: unknown.`
 
+<!-- more -->
+
 经过网上查询：
 
 1. [https://github.com/docker/for-linux/issues/219](https://github.com/docker/for-linux/issues/219)
