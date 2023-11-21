@@ -326,6 +326,7 @@ nginx的配置默认情况下不支持WebSocket，需要额外配置才能支持
 
 以`ws://example.com/websocket`为例，请求头如下：
 
+
 ```
 GET /websocket HTTP/1.1
 Host: example.com
@@ -336,11 +337,13 @@ Origin: http://example.com
 Sec-WebSocket-Version: 13
 ``` 
 
+
 该请求头与普通的HTTP请求头非常类似，除了多几个字段：
 
 - Upgrade：必须为`websocket`，表示需要升级协议为WebSocket进行通讯
 - Connection：必须为`Upgrade`，表示需要升级连接
 - Sec-WebSocket-Key：必须为随机字符串，用于握手验证，服务器也会返回一个类似的字符串响应头：
+
 
 ```
 HTTP/1.1 101 Switching Protocols
@@ -349,9 +352,11 @@ Connection: Upgrade
 Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 ```
 
+
 经过这样的握手，双方就可以建立WebSocket连接，进行实时双向通讯了。
 
 nginx反向代理WebSocket的话，需要明确地添加`Upgrade`和`Connection`头：
+
 
 ```
 # 如果没有Upgrade头，则$connection_upgrade为close，否则为upgrade
@@ -373,9 +378,11 @@ server {
 }
 ```
 
+
 通过以上配置，nginx就可以正常代理WebSocket请求了。
 
 如果有多个后端服务器，则可以使用`upstream`定义多个后端服务器，并在`location`中使用`proxy_pass`指定后端服务器即可：
+
 
 ```
 upstream backend {
@@ -400,6 +407,7 @@ server {
     }
 }
 ```
+
 
 
 
