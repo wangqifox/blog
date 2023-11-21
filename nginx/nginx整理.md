@@ -332,10 +332,10 @@ GET /websocket HTTP/1.1
 Host: example.com
 Upgrade: websocket
 Connection: Upgrade
-Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 Origin: http://example.com
 Sec-WebSocket-Version: 13
-``` 
+```
 
 
 该请求头与普通的HTTP请求头非常类似，除了多几个字段：
@@ -349,7 +349,7 @@ Sec-WebSocket-Version: 13
 HTTP/1.1 101 Switching Protocols
 Upgrade: websocket
 Connection: Upgrade
-Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 ```
 
 
