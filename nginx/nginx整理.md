@@ -327,7 +327,7 @@ nginx的配置默认情况下不支持WebSocket，需要额外配置才能支持
 以`ws://example.com/websocket`为例，请求头如下：
 
 
-<code>
+```
 GET /websocket HTTP/1.1
 Host: example.com
 Upgrade: websocket
@@ -335,7 +335,8 @@ Connection: Upgrade
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 Origin: http://example.com
 Sec-WebSocket-Version: 13
-</code>
+
+```
 
 
 该请求头与普通的HTTP请求头非常类似，除了多几个字段：
@@ -345,12 +346,13 @@ Sec-WebSocket-Version: 13
 - Sec-WebSocket-Key：必须为随机字符串，用于握手验证，服务器也会返回一个类似的字符串响应头：
 
 
-<code>
+```
 HTTP/1.1 101 Switching Protocols
 Upgrade: websocket
 Connection: Upgrade
 Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-</code>
+
+```
 
 
 经过这样的握手，双方就可以建立WebSocket连接，进行实时双向通讯了。
@@ -358,10 +360,8 @@ Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 nginx反向代理WebSocket的话，需要明确地添加`Upgrade`和`Connection`头：
 
 
-<code>
-
-如果没有Upgrade头，则$connection_upgrade为close，否则为upgrade
-
+```
+# 如果没有Upgrade头，则$connection_upgrade为close，否则为upgrade
 map $http_upgrade $connection_upgrade {
     default upgrade;
     ''      close;
@@ -378,7 +378,8 @@ server {
         proxy_set_header Connection $connection_upgrade;
     }
 }
-</code>
+
+```
 
 
 通过以上配置，nginx就可以正常代理WebSocket请求了。
@@ -386,7 +387,7 @@ server {
 如果有多个后端服务器，则可以使用`upstream`定义多个后端服务器，并在`location`中使用`proxy_pass`指定后端服务器即可：
 
 
-<code>
+```
 upstream backend {
     192.168.3.1:3000;
     192.168.3.2:300;
@@ -408,7 +409,7 @@ server {
         proxy_set_header Connection $connection_upgrade;
     }
 }
-</code>
+```
 
 
 
