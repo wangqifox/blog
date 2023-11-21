@@ -359,7 +359,9 @@ nginx反向代理WebSocket的话，需要明确地添加`Upgrade`和`Connection`
 
 
 <code>
-# 如果没有Upgrade头，则$connection_upgrade为close，否则为upgrade
+
+如果没有Upgrade头，则$connection_upgrade为close，否则为upgrade
+
 map $http_upgrade $connection_upgrade {
     default upgrade;
     ''      close;
